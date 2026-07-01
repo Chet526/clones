@@ -77,11 +77,11 @@ def test_checkout_posts_expected_params(tmp_path, monkeypatch):
     def fake_post(path, params):
         captured["path"] = path
         captured["params"] = params
-        return {"id": "cs_test", "url": "https://checkout.stripe/cs_test"}
+        return {"id": "cs_test", "url": "https://checkout.stripe.test/cs_test"}
 
     monkeypatch.setattr(service, "_api_post", fake_post)
     session = service.create_checkout_session("pro")
-    assert session["url"].startswith("https://checkout.stripe")
+    assert session["url"] == "https://checkout.stripe.test/cs_test"
     assert captured["path"] == "/v1/checkout/sessions"
     params = captured["params"]
     assert params["mode"] == "subscription"
