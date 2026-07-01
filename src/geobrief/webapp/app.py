@@ -12,7 +12,9 @@ from pathlib import Path
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
+from ..assistant import Assistant, AssistantConfig
 from ..ingest import UnsupportedFileTypeError
 from ..pipeline import __version__, process_bytes
 
@@ -69,6 +71,45 @@ async def process(
             "summary_json": result.summary_json(),
         }
     )
+
+
+class AssistantRequest(BaseModel):
+    """Payload for an investigator question about processed data."""
+
+    question: str = ""
+    summary: dict
+    geojson: dict | None = None
+
+
+@app.get("/api/assistant/status")
+def assistant_status() -> dict:
+    """Report whether the remote model is configured (no data leaves here)."""
+    config = AssistantConfig.from_env()
+    return {
+        "enabled": config.enabled,
+        "model": config.model if config.enabled else None,
+        "backend": "openrouter" if config.enabled else "local",
+    }
+
+
+@app.post("/api/assistant")
+def assistant(request: AssistantRequest) -> JSONResponse:
+    """Answer an investigator question about already-processed data.
+
+    The client sends back the processing ``summary`` (and optional
+    ``geojson``) it already holds; the assistant builds an aggregate context
+    from them. When no OpenRouter key is configured the answer is produced
+    locally and nothing leaves the machine.
+    """
+    if not request.summary:
+        raise HTTPException(
+            status_code=400,
+            detail="Process a file first, then ask the assistant.",
+        )
+    result = Assistant().answer(
+        request.question, request.summary, request.geojson
+    )
+    return JSONResponse(result)
 
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

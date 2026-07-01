@@ -73,6 +73,39 @@
         <button id="dl-json" class="secondary">Processing report (JSON)</button>
         <button id="dl-geojson" class="secondary">Map points (GeoJSON)</button>
       </div>
+
+      <h2>Step 5 &mdash; Ask the assistant</h2>
+      <p class="hint" id="assistant-mode">
+        The assistant helps you make sense of this data. It answers from the
+        processed records only.
+      </p>
+      <div class="suggestions" id="assistant-suggestions">
+        <button type="button" class="chip" data-q="Explain this data">
+          Explain this data
+        </button>
+        <button type="button" class="chip" data-q="What is missing?">
+          What is missing?
+        </button>
+        <button type="button" class="chip" data-q="Summarize the movement">
+          Summarize the movement
+        </button>
+        <button type="button" class="chip" data-q="Explain the time zones">
+          Explain the time zones
+        </button>
+        <button type="button" class="chip" data-q="Suggest filters">
+          Suggest filters
+        </button>
+      </div>
+      <div id="chat-log" class="chat-log" aria-live="polite"></div>
+      <form id="assistant-form" class="assistant-form">
+        <input
+          type="text"
+          id="assistant-input"
+          placeholder="Ask a question about this data…"
+          autocomplete="off"
+        />
+        <button type="submit" id="assistant-send" class="primary">Ask</button>
+      </form>
     </section>
   </main>
 

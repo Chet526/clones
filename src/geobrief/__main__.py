@@ -2,11 +2,14 @@
 
 Usage:
     python -m geobrief process INPUT.csv [--tz America/Chicago] [--out DIR]
+    python -m geobrief ask INPUT.csv "what is missing?" [--tz ...]
     python -m geobrief serve [--host 127.0.0.1] [--port 8000]
 
 The ``process`` command reads a file, hashes it, cleans and validates the
 records, and writes a cleaned CSV, a JSON summary, and map-ready GeoJSON to
-an output directory. The original file is never modified.
+an output directory. The ``ask`` command answers a plain-English question
+about the data using the investigator AI assistant. The original file is
+never modified.
 """
 
 from __future__ import annotations
@@ -54,6 +57,35 @@ def _cmd_process(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_ask(args: argparse.Namespace) -> int:
+    from .assistant import Assistant
+
+    input_path = Path(args.input)
+    if not input_path.exists():
+        print(f"Error: file not found: {input_path}", file=sys.stderr)
+        return 2
+
+    result = process_file(
+        input_path,
+        display_timezone=args.tz,
+        assume_source_timezone=args.assume_tz,
+    )
+    answer = Assistant().answer(
+        args.question, result.summary(), result.geojson()
+    )
+
+    print(answer["answer"])
+    print()
+    print(answer["disclaimer"])
+    if answer["backend"] != "openrouter":
+        print(
+            "\n(Answered locally. Set OPENROUTER_API_KEY to enable the "
+            "AI model.)",
+            file=sys.stderr,
+        )
+    return 0
+
+
 def _cmd_serve(args: argparse.Namespace) -> int:
     import uvicorn
 
@@ -89,6 +121,27 @@ def build_parser() -> argparse.ArgumentParser:
         "--out", default=None, help="Output directory for exports."
     )
     p_process.set_defaults(func=_cmd_process)
+
+    p_ask = sub.add_parser(
+        "ask",
+        help="Ask the investigator AI assistant about a file's data.",
+    )
+    p_ask.add_argument("input", help="Path to the source file.")
+    p_ask.add_argument(
+        "question",
+        help='Question, e.g. "summarize the movement" or "what is missing?".',
+    )
+    p_ask.add_argument(
+        "--tz",
+        default="UTC",
+        help="Display time zone (IANA name, e.g. America/Chicago).",
+    )
+    p_ask.add_argument(
+        "--assume-tz",
+        default=None,
+        help="Assume this source time zone for naive timestamps.",
+    )
+    p_ask.set_defaults(func=_cmd_ask)
 
     p_serve = sub.add_parser("serve", help="Run the local web app.")
     p_serve.add_argument("--host", default="127.0.0.1")

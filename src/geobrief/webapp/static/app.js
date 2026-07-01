@@ -193,7 +193,101 @@ function wireDownloads() {
   });
 }
 
+function appendChat(role, text, extra) {
+  const log = el("chat-log");
+  const item = document.createElement("div");
+  item.className = "chat-msg " + role;
+  const body = document.createElement("div");
+  body.className = "bubble";
+  body.textContent = text;
+  item.appendChild(body);
+  if (extra) {
+    const note = document.createElement("div");
+    note.className = "chat-note";
+    note.textContent = extra;
+    item.appendChild(note);
+  }
+  log.appendChild(item);
+  log.scrollTop = log.scrollHeight;
+  return body;
+}
+
+async function askAssistant(question) {
+  if (!question) return;
+  if (!lastResult) {
+    appendChat("assistant", "Process a file first, then ask me about it.");
+    return;
+  }
+  appendChat("user", question);
+  const pending = appendChat("assistant", "Thinking…");
+  el("assistant-send").disabled = true;
+  try {
+    const response = await fetch("/api/assistant", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question: question,
+        summary: lastResult.summary,
+        geojson: lastResult.geojson,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || "The assistant could not answer.");
+    }
+    pending.textContent = data.answer;
+    const parent = pending.parentElement;
+    const note = document.createElement("div");
+    note.className = "chat-note";
+    note.textContent = data.disclaimer;
+    parent.appendChild(note);
+  } catch (err) {
+    pending.textContent = err.message;
+    pending.parentElement.classList.add("error");
+  } finally {
+    el("assistant-send").disabled = false;
+  }
+}
+
+function wireAssistant() {
+  el("assistant-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const input = el("assistant-input");
+    const question = input.value.trim();
+    if (!question) return;
+    input.value = "";
+    askAssistant(question);
+  });
+  el("assistant-suggestions").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-q]");
+    if (!button) return;
+    askAssistant(button.getAttribute("data-q"));
+  });
+}
+
+async function refreshAssistantMode() {
+  try {
+    const response = await fetch("/api/assistant/status");
+    if (!response.ok) return;
+    const data = await response.json();
+    const note = el("assistant-mode");
+    if (data.enabled) {
+      note.textContent =
+        "AI model (" + data.model + ") is configured. An aggregate summary " +
+        "of this data may be sent to OpenRouter to answer your questions.";
+    } else {
+      note.textContent =
+        "Running locally — your data stays on this computer. Set " +
+        "OPENROUTER_API_KEY to enable the AI model.";
+    }
+  } catch (err) {
+    /* status is best-effort */
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   el("upload-form").addEventListener("submit", handleSubmit);
   wireDownloads();
+  wireAssistant();
+  refreshAssistantMode();
 });

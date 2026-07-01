@@ -57,6 +57,38 @@ python -m geobrief process sample_data/sample_locations.csv \
 This writes `*_cleaned.csv`, `*_summary.json`, and `*_points.geojson` next to
 the input (or into `--out`).
 
+## Ask the AI assistant
+
+An investigator assistant helps you make sense of the processed data — in the
+web app (Step 5, "Ask the assistant") or from the command line:
+
+```bash
+python -m geobrief ask sample_data/sample_locations.csv "summarize the movement" \
+    --tz America/Chicago
+```
+
+Try questions like *"explain this data"*, *"what is missing?"*, *"summarize the
+movement"*, *"explain the time zones"*, or *"suggest filters"*.
+
+**Local-first by default.** With no configuration the assistant answers
+entirely on your machine from the processing summary — nothing leaves the
+computer. To enable a hosted model via [OpenRouter](https://openrouter.ai),
+set these environment variables (they can be supplied later, no code change
+needed):
+
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `OPENROUTER_API_KEY` | API key; enables the hosted model | *(unset → local)* |
+| `OPENROUTER_MODEL` | Model slug | `openrouter/auto` |
+| `OPENROUTER_BASE_URL` | API base URL | `https://openrouter.ai/api/v1` |
+| `GEOBRIEF_ASSISTANT_ENABLED` | Force the hosted model on/off | follows key |
+
+When a key is set, only an **aggregate** analysis context (counts, time range,
+missing fields, a movement summary, and a small sample of points) is sent —
+never the full record set. Every answer carries the notice: *"Draft language
+generated from processed records. Investigator must verify before use."* The
+assistant assists, it never decides.
+
 ## Use it — as a library
 
 ```python
@@ -86,6 +118,7 @@ src/geobrief/
   timezones.py   timestamp parsing + UTC/display conversion
   cleaning.py    cleaning & validation engine
   pipeline.py    orchestration + summary / CSV / GeoJSON exports
+  assistant.py   investigator AI assistant (OpenRouter + local fallback)
   webapp/        local FastAPI app + guided UI (Leaflet map)
 docs/PRD.md      full product requirements document
 sample_data/     example input file
