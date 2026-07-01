@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GeoBrief LE — Location Evidence Processor</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <h1>GeoBrief LE</h1>
+    <p class="tagline">Turn location records into maps, timelines, and reports.</p>
+  </header>
+
+  <main>
+    <section class="card" id="upload-card">
+      <h2>Step 1 &mdash; Upload your file</h2>
+      <p class="hint">
+        Choose a spreadsheet of location records (CSV or Excel). Your file stays
+        on this computer. The software does the hard part.
+      </p>
+
+      <form id="upload-form">
+        <label class="field">
+          <span>Location records file</span>
+          <input type="file" id="file-input" name="file"
+                 accept=".csv,.xlsx,.xls" required />
+        </label>
+
+        <label class="field">
+          <span>Show times in</span>
+          <select id="tz-select" name="display_timezone">
+            <option value="UTC" selected>UTC (original)</option>
+            <option value="America/New_York">Eastern Time</option>
+            <option value="America/Chicago">Central Time</option>
+            <option value="America/Denver">Mountain Time</option>
+            <option value="America/Los_Angeles">Pacific Time</option>
+            <option value="America/Anchorage">Alaska Time</option>
+            <option value="Pacific/Honolulu">Hawaii Time</option>
+          </select>
+        </label>
+
+        <button type="submit" id="process-btn" class="primary">
+          Process file
+        </button>
+      </form>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="card hidden" id="results-card">
+      <h2>Step 2 &mdash; Review what we found</h2>
+      <p id="plain-summary" class="plain-summary"></p>
+
+      <div class="stat-grid" id="stat-grid"></div>
+
+      <div id="warnings" class="warnings hidden">
+        <h3>Warnings</h3>
+        <ul id="warning-list"></ul>
+      </div>
+
+      <h2>Step 3 &mdash; Your map</h2>
+      <div id="map"></div>
+
+      <h2>Step 4 &mdash; Download your outputs</h2>
+      <div class="downloads">
+        <button id="dl-csv" class="secondary">Cleaned spreadsheet (CSV)</button>
+        <button id="dl-json" class="secondary">Processing report (JSON)</button>
+        <button id="dl-geojson" class="secondary">Map points (GeoJSON)</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>
+      Local-first &middot; Original files are hashed (SHA-256) and never altered.
+      Draft outputs must be verified by the investigator before use.
+    </p>
+  </footer>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
