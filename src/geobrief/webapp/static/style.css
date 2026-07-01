@@ -195,6 +195,91 @@ button.secondary:hover { border-color: var(--accent); }
 
 .hidden { display: none; }
 
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.plan {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+.plan.current { border-color: var(--accent); }
+.plan-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.plan-head h3 { margin: 0; font-size: 1.25rem; }
+.plan-badge {
+  background: var(--accent);
+  color: white;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.plan-price {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0.5rem 0 0.25rem;
+}
+.plan-tagline { color: var(--muted); margin: 0 0 0.75rem; }
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.plan-features li {
+  padding-left: 1.4rem;
+  position: relative;
+  margin: 0.35rem 0;
+}
+.plan-features li::before {
+  content: "\2713";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.upsell {
+  border: 1px solid var(--accent);
+  background: rgba(37, 99, 235, 0.1);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  margin: 0.5rem 0 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.upsell p { margin: 0; }
+.upsell-cta {
+  background: var(--accent);
+  color: white;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.upsell-cta:hover { background: var(--accent-hover); }
+
+.assistant-form input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 footer {
   text-align: center;
   color: var(--muted);

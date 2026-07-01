@@ -70,6 +70,10 @@ python -m geobrief ask sample_data/sample_locations.csv "summarize the movement"
 Try questions like *"explain this data"*, *"what is missing?"*, *"summarize the
 movement"*, *"explain the time zones"*, or *"suggest filters"*.
 
+> **The AI assistant is a Pro-plan feature.** See [Plans & pricing](#plans--pricing).
+> In the web app the assistant endpoints require the Pro plan; the Standard
+> plan shows an upgrade prompt instead.
+
 **Local-first by default.** With no configuration the assistant answers
 entirely on your machine from the processing summary — nothing leaves the
 computer. To enable a hosted model via [OpenRouter](https://openrouter.ai),
@@ -88,6 +92,28 @@ missing fields, a movement summary, and a small sample of points) is sent —
 never the full record set. Every answer carries the notice: *"Draft language
 generated from processed records. Investigator must verify before use."* The
 assistant assists, it never decides.
+
+## Plans &amp; pricing
+
+GeoBrief LE is offered on two monthly plans:
+
+| Plan | Price | Includes |
+| --- | --- | --- |
+| **Standard** | **$9.99/month** | Core workflow: upload, clean & validate, SHA-256 hashing, interactive map, and CSV / JSON / GeoJSON downloads |
+| **Pro** | **$14.99/month** | Everything in Standard **plus** the investigator AI assistant |
+
+The **investigator AI assistant is the Pro upsell** — it is only available on
+the Pro plan. The active plan is selected with the `GEOBRIEF_PLAN` environment
+variable (`standard` by default):
+
+```bash
+GEOBRIEF_PLAN=pro python -m geobrief serve   # unlock the AI assistant
+```
+
+The web app shows both plans (Step "Plans & pricing"), marks the active plan,
+and exposes them at `GET /api/plans`. When the assistant is requested on the
+Standard plan, `GET /api/assistant/status` and `POST /api/assistant` return
+`402 Payment Required` with an upgrade prompt.
 
 ## Use it — as a library
 
@@ -119,6 +145,7 @@ src/geobrief/
   cleaning.py    cleaning & validation engine
   pipeline.py    orchestration + summary / CSV / GeoJSON exports
   assistant.py   investigator AI assistant (OpenRouter + local fallback)
+  subscription.py plans, pricing, and feature entitlements (AI = Pro)
   webapp/        local FastAPI app + guided UI (Leaflet map)
 docs/PRD.md      full product requirements document
 sample_data/     example input file

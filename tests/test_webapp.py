@@ -2,11 +2,19 @@
 
 import io
 
+import pytest
 from fastapi.testclient import TestClient
 
+from geobrief.subscription import PLAN_ENV_VAR
 from geobrief.webapp.app import app
 
 client = TestClient(app)
+
+
+@pytest.fixture()
+def pro_plan(monkeypatch):
+    """Activate the Pro plan so assistant endpoints are unlocked."""
+    monkeypatch.setenv(PLAN_ENV_VAR, "pro")
 
 
 def test_health():
@@ -69,15 +77,16 @@ def _process_sample():
     return response.json()
 
 
-def test_assistant_status_defaults_to_local():
+def test_assistant_status_defaults_to_local(pro_plan):
     response = client.get("/api/assistant/status")
     assert response.status_code == 200
     body = response.json()
+    assert body["available"] is True
     assert body["backend"] in {"local", "openrouter"}
     assert "enabled" in body
 
 
-def test_assistant_answers_from_processed_data():
+def test_assistant_answers_from_processed_data(pro_plan):
     processed = _process_sample()
     response = client.post(
         "/api/assistant",
@@ -94,8 +103,49 @@ def test_assistant_answers_from_processed_data():
     assert body["backend"].startswith("local")
 
 
-def test_assistant_requires_summary():
+def test_assistant_requires_summary(pro_plan):
     response = client.post(
         "/api/assistant", json={"question": "hi", "summary": {}}
     )
     assert response.status_code == 400
+
+
+def test_plans_endpoint_lists_both_tiers():
+    response = client.get("/api/plans")
+    assert response.status_code == 200
+    body = response.json()
+    ids = {plan["id"]: plan for plan in body["plans"]}
+    assert ids["standard"]["price_display"] == "$9.99/month"
+    assert ids["pro"]["price_display"] == "$14.99/month"
+
+
+def test_plans_marks_current_plan(monkeypatch):
+    monkeypatch.setenv(PLAN_ENV_VAR, "pro")
+    body = client.get("/api/plans").json()
+    assert body["current_plan"] == "pro"
+    current = [plan for plan in body["plans"] if plan["current"]]
+    assert [plan["id"] for plan in current] == ["pro"]
+
+
+def test_assistant_status_paywalled_on_standard(monkeypatch):
+    monkeypatch.setenv(PLAN_ENV_VAR, "standard")
+    response = client.get("/api/assistant/status")
+    assert response.status_code == 402
+    body = response.json()
+    assert body["available"] is False
+    assert body["required_plan"]["id"] == "pro"
+
+
+def test_assistant_endpoint_paywalled_on_standard(monkeypatch):
+    monkeypatch.setenv(PLAN_ENV_VAR, "standard")
+    processed = _process_sample()
+    response = client.post(
+        "/api/assistant",
+        json={
+            "question": "summarize the movement",
+            "summary": processed["summary"],
+            "geojson": processed["geojson"],
+        },
+    )
+    assert response.status_code == 402
+    assert response.json()["required_plan"]["price_display"] == "$14.99/month"

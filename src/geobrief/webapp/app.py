@@ -17,6 +17,13 @@ from pydantic import BaseModel
 from ..assistant import Assistant, AssistantConfig
 from ..ingest import UnsupportedFileTypeError
 from ..pipeline import __version__, process_bytes
+from ..subscription import (
+    Feature,
+    PLANS,
+    current_plan,
+    plan_allows,
+    upgrade_target,
+)
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -36,6 +43,34 @@ def index() -> HTMLResponse:
 @app.get("/api/health")
 def health() -> dict:
     return {"status": "ok", "product": "GeoBrief LE", "version": __version__}
+
+
+def _assistant_upsell() -> dict:
+    """Upsell payload describing the plan needed to unlock the assistant."""
+    target = upgrade_target(Feature.AI_ASSISTANT)
+    return {
+        "detail": (
+            "The investigator AI assistant is a Pro feature. Upgrade to "
+            f"{target.name} ({target.price_display}) to ask questions about "
+            "your processed data."
+            if target
+            else "The investigator AI assistant is not available on your plan."
+        ),
+        "feature": Feature.AI_ASSISTANT,
+        "required_plan": target.to_dict() if target else None,
+    }
+
+
+@app.get("/api/plans")
+def plans() -> dict:
+    """List the subscription plans and report which one is active."""
+    active = current_plan()
+    return {
+        "current_plan": active.id,
+        "plans": [
+            plan.to_dict(current=plan.id == active.id) for plan in PLANS
+        ],
+    }
 
 
 @app.post("/api/process")
@@ -82,25 +117,42 @@ class AssistantRequest(BaseModel):
 
 
 @app.get("/api/assistant/status")
-def assistant_status() -> dict:
-    """Report whether the remote model is configured (no data leaves here)."""
+def assistant_status() -> JSONResponse:
+    """Report assistant availability for the active plan.
+
+    The assistant is a Pro-plan feature. When the active plan does not
+    include it, respond with ``402 Payment Required`` and an upsell payload
+    so the UI can prompt an upgrade. Otherwise report whether the remote
+    model is configured (no data leaves the machine on the local backend).
+    """
+    if not plan_allows(Feature.AI_ASSISTANT):
+        payload = _assistant_upsell()
+        payload["available"] = False
+        return JSONResponse(payload, status_code=402)
+
     config = AssistantConfig.from_env()
-    return {
-        "enabled": config.enabled,
-        "model": config.model if config.enabled else None,
-        "backend": "openrouter" if config.enabled else "local",
-    }
+    return JSONResponse(
+        {
+            "available": True,
+            "enabled": config.enabled,
+            "model": config.model if config.enabled else None,
+            "backend": "openrouter" if config.enabled else "local",
+        }
+    )
 
 
 @app.post("/api/assistant")
 def assistant(request: AssistantRequest) -> JSONResponse:
     """Answer an investigator question about already-processed data.
 
-    The client sends back the processing ``summary`` (and optional
-    ``geojson``) it already holds; the assistant builds an aggregate context
-    from them. When no OpenRouter key is configured the answer is produced
-    locally and nothing leaves the machine.
+    Requires the Pro plan; requests on other plans receive ``402 Payment
+    Required`` with an upsell payload. The client sends back the processing
+    ``summary`` (and optional ``geojson``) it already holds; the assistant
+    builds an aggregate context from them. When no OpenRouter key is
+    configured the answer is produced locally and nothing leaves the machine.
     """
+    if not plan_allows(Feature.AI_ASSISTANT):
+        return JSONResponse(_assistant_upsell(), status_code=402)
     if not request.summary:
         raise HTTPException(
             status_code=400,

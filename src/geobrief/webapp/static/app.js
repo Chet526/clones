@@ -7,6 +7,7 @@
 let map = null;
 let layerGroup = null;
 let lastResult = null;
+let assistantAvailable = true;
 
 function el(id) {
   return document.getElementById(id);
@@ -214,6 +215,13 @@ function appendChat(role, text, extra) {
 
 async function askAssistant(question) {
   if (!question) return;
+  if (!assistantAvailable) {
+    appendChat(
+      "assistant",
+      "The AI assistant is a Pro feature. Upgrade your plan to ask questions."
+    );
+    return;
+  }
   if (!lastResult) {
     appendChat("assistant", "Process a file first, then ask me about it.");
     return;
@@ -232,6 +240,13 @@ async function askAssistant(question) {
       }),
     });
     const data = await response.json();
+    if (response.status === 402) {
+      applyAssistantLock(data);
+      pending.textContent =
+        data.detail || "The AI assistant is a Pro feature.";
+      pending.parentElement.classList.add("error");
+      return;
+    }
     if (!response.ok) {
       throw new Error(data.detail || "The assistant could not answer.");
     }
@@ -245,7 +260,7 @@ async function askAssistant(question) {
     pending.textContent = err.message;
     pending.parentElement.classList.add("error");
   } finally {
-    el("assistant-send").disabled = false;
+    el("assistant-send").disabled = !assistantAvailable;
   }
 }
 
@@ -265,11 +280,75 @@ function wireAssistant() {
   });
 }
 
+function applyAssistantLock(info) {
+  assistantAvailable = false;
+  const upsell = el("assistant-upsell");
+  const text = el("assistant-upsell-text");
+  const cta = el("assistant-upsell-cta");
+  if (text) {
+    text.textContent =
+      (info && info.detail) ||
+      "The AI assistant is a Pro feature. Upgrade to unlock it.";
+  }
+  if (cta && info && info.required_plan) {
+    cta.textContent =
+      "Upgrade to " +
+      info.required_plan.name +
+      " (" +
+      info.required_plan.price_display +
+      ")";
+  }
+  if (upsell) upsell.classList.remove("hidden");
+  const mode = el("assistant-mode");
+  if (mode) mode.classList.add("hidden");
+  el("assistant-send").disabled = true;
+  el("assistant-input").disabled = true;
+  el("assistant-input").placeholder = "Upgrade to Pro to ask questions…";
+}
+
+function renderPlans(data) {
+  const grid = el("plan-grid");
+  if (!grid || !data || !data.plans) return;
+  grid.innerHTML = data.plans
+    .map((plan) => {
+      const badge = plan.current
+        ? '<span class="plan-badge">Current plan</span>'
+        : "";
+      const items = (plan.highlights || [])
+        .map((h) => `<li>${escapeHtml(h)}</li>`)
+        .join("");
+      return (
+        `<div class="plan${plan.current ? " current" : ""}">` +
+        `<div class="plan-head"><h3>${escapeHtml(plan.name)}</h3>${badge}</div>` +
+        `<p class="plan-price">${escapeHtml(plan.price_display)}</p>` +
+        `<p class="plan-tagline">${escapeHtml(plan.tagline)}</p>` +
+        `<ul class="plan-features">${items}</ul>` +
+        `</div>`
+      );
+    })
+    .join("");
+}
+
+async function loadPlans() {
+  try {
+    const response = await fetch("/api/plans");
+    if (!response.ok) return;
+    renderPlans(await response.json());
+  } catch (err) {
+    /* pricing is best-effort */
+  }
+}
+
 async function refreshAssistantMode() {
   try {
     const response = await fetch("/api/assistant/status");
-    if (!response.ok) return;
     const data = await response.json();
+    if (response.status === 402) {
+      applyAssistantLock(data);
+      return;
+    }
+    if (!response.ok) return;
+    assistantAvailable = true;
     const note = el("assistant-mode");
     if (data.enabled) {
       note.textContent =
@@ -289,5 +368,6 @@ document.addEventListener("DOMContentLoaded", () => {
   el("upload-form").addEventListener("submit", handleSubmit);
   wireDownloads();
   wireAssistant();
+  loadPlans();
   refreshAssistantMode();
 });

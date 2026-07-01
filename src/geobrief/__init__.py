@@ -7,6 +7,7 @@ processing summary.
 
 from .assistant import Assistant, AssistantConfig, build_context
 from .pipeline import ProcessingResult, process_dataframe, process_file
+from .subscription import PLANS, Feature, Plan, current_plan, plan_allows
 
 __all__ = [
     "process_file",
@@ -15,6 +16,11 @@ __all__ = [
     "Assistant",
     "AssistantConfig",
     "build_context",
+    "Plan",
+    "PLANS",
+    "Feature",
+    "current_plan",
+    "plan_allows",
     "__version__",
 ]
 

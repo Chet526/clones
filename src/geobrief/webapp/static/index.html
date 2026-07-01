@@ -53,6 +53,15 @@
       <p id="status" class="status" role="status" aria-live="polite"></p>
     </section>
 
+    <section class="card" id="pricing-card">
+      <h2>Plans &amp; pricing</h2>
+      <p class="hint">
+        Start on Standard for the core workflow. Upgrade to Pro to unlock the
+        investigator AI assistant.
+      </p>
+      <div class="plan-grid" id="plan-grid"></div>
+    </section>
+
     <section class="card hidden" id="results-card">
       <h2>Step 2 &mdash; Review what we found</h2>
       <p id="plain-summary" class="plain-summary"></p>
@@ -75,6 +84,12 @@
       </div>
 
       <h2>Step 5 &mdash; Ask the assistant</h2>
+      <div class="upsell hidden" id="assistant-upsell">
+        <p id="assistant-upsell-text"></p>
+        <a href="#pricing-card" class="upsell-cta" id="assistant-upsell-cta">
+          See plans
+        </a>
+      </div>
       <p class="hint" id="assistant-mode">
         The assistant helps you make sense of this data. It answers from the
         processed records only.
