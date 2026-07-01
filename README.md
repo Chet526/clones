@@ -115,6 +115,40 @@ and exposes them at `GET /api/plans`. When the assistant is requested on the
 Standard plan, `GET /api/assistant/status` and `POST /api/assistant` return
 `402 Payment Required` with an upgrade prompt.
 
+### Real billing (Stripe)
+
+For a live product, entitlements come from real Stripe subscriptions instead of
+`GEOBRIEF_PLAN`. Create two recurring **Prices** in Stripe (one per plan) and
+configure the server with these environment variables:
+
+| Variable | Purpose |
+| --- | --- |
+| `STRIPE_SECRET_KEY` | Secret API key; enables Checkout. |
+| `STRIPE_WEBHOOK_SECRET` | Signing secret used to verify webhook events. |
+| `STRIPE_PRICE_STANDARD` | Stripe Price id for the $9.99 Standard plan. |
+| `STRIPE_PRICE_PRO` | Stripe Price id for the $14.99 Pro plan. |
+| `STRIPE_SUCCESS_URL` / `STRIPE_CANCEL_URL` | Post-checkout redirect URLs. |
+| `GEOBRIEF_BILLING_STORE` | Path to the subscription-state JSON file. |
+
+Endpoints:
+
+* `POST /api/billing/checkout` `{ "plan": "pro" }` → creates a Stripe Checkout
+  Session and returns its `url`; the pricing UI redirects the customer there.
+* `POST /api/billing/webhook` → receives Stripe events. The `Stripe-Signature`
+  header is verified (HMAC-SHA256, constant-time compare, replay window) before
+  the payload is trusted; `checkout.session.completed` and
+  `customer.subscription.*` events update the active plan.
+* `GET /api/billing/status` → reports whether billing is configured and the
+  currently entitled plan.
+
+Point a Stripe webhook endpoint at `/api/billing/webhook` (the signing secret
+it gives you is `STRIPE_WEBHOOK_SECRET`). When a subscription is active the
+plan is resolved from Stripe; with no active subscription the server falls back
+to `GEOBRIEF_PLAN` (defaulting to Standard) for local development. The secret
+key is only used server-side and is never sent to the browser. No extra Python
+dependency is added — Stripe calls and signature verification use the standard
+library.
+
 ## Use it — as a library
 
 ```python
@@ -146,6 +180,7 @@ src/geobrief/
   pipeline.py    orchestration + summary / CSV / GeoJSON exports
   assistant.py   investigator AI assistant (OpenRouter + local fallback)
   subscription.py plans, pricing, and feature entitlements (AI = Pro)
+  billing.py     Stripe checkout, signed webhooks, subscription state
   webapp/        local FastAPI app + guided UI (Leaflet map)
 docs/PRD.md      full product requirements document
 sample_data/     example input file

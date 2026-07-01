@@ -6,6 +6,7 @@ processing summary.
 """
 
 from .assistant import Assistant, AssistantConfig, build_context
+from .billing import BillingConfig, BillingService, effective_plan
 from .pipeline import ProcessingResult, process_dataframe, process_file
 from .subscription import PLANS, Feature, Plan, current_plan, plan_allows
 
@@ -21,6 +22,9 @@ __all__ = [
     "Feature",
     "current_plan",
     "plan_allows",
+    "BillingConfig",
+    "BillingService",
+    "effective_plan",
     "__version__",
 ]
 

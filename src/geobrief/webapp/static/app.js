@@ -8,6 +8,7 @@ let map = null;
 let layerGroup = null;
 let lastResult = null;
 let assistantAvailable = true;
+let billingEnabled = false;
 
 function el(id) {
   return document.getElementById(id);
@@ -309,6 +310,7 @@ function applyAssistantLock(info) {
 function renderPlans(data) {
   const grid = el("plan-grid");
   if (!grid || !data || !data.plans) return;
+  billingEnabled = Boolean(data.billing_enabled);
   grid.innerHTML = data.plans
     .map((plan) => {
       const badge = plan.current
@@ -317,16 +319,57 @@ function renderPlans(data) {
       const items = (plan.highlights || [])
         .map((h) => `<li>${escapeHtml(h)}</li>`)
         .join("");
+      let action = "";
+      if (plan.current) {
+        action = '<button class="secondary" disabled>Current plan</button>';
+      } else if (billingEnabled) {
+        action =
+          `<button class="primary plan-cta" data-plan="${escapeHtml(plan.id)}">` +
+          `Subscribe — ${escapeHtml(plan.price_display)}</button>`;
+      } else {
+        action =
+          '<button class="secondary" disabled title="Billing is not ' +
+          'configured on this server">Subscribe</button>';
+      }
       return (
         `<div class="plan${plan.current ? " current" : ""}">` +
         `<div class="plan-head"><h3>${escapeHtml(plan.name)}</h3>${badge}</div>` +
         `<p class="plan-price">${escapeHtml(plan.price_display)}</p>` +
         `<p class="plan-tagline">${escapeHtml(plan.tagline)}</p>` +
         `<ul class="plan-features">${items}</ul>` +
+        `<div class="plan-action">${action}</div>` +
         `</div>`
       );
     })
     .join("");
+}
+
+async function startCheckout(planId) {
+  if (!planId) return;
+  try {
+    const response = await fetch("/api/billing/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan: planId }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.url) {
+      throw new Error(data.detail || "Could not start checkout.");
+    }
+    window.location.assign(data.url);
+  } catch (err) {
+    setStatus(err.message, true);
+  }
+}
+
+function wirePlans() {
+  const grid = el("plan-grid");
+  if (!grid) return;
+  grid.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-plan]");
+    if (!button) return;
+    startCheckout(button.getAttribute("data-plan"));
+  });
 }
 
 async function loadPlans() {
@@ -368,6 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
   el("upload-form").addEventListener("submit", handleSubmit);
   wireDownloads();
   wireAssistant();
+  wirePlans();
   loadPlans();
   refreshAssistantMode();
 });

@@ -5,6 +5,7 @@ import io
 import pytest
 from fastapi.testclient import TestClient
 
+from geobrief.billing import BillingStore
 from geobrief.subscription import PLAN_ENV_VAR
 from geobrief.webapp.app import app
 
@@ -149,3 +150,45 @@ def test_assistant_endpoint_paywalled_on_standard(monkeypatch):
     )
     assert response.status_code == 402
     assert response.json()["required_plan"]["price_display"] == "$14.99/month"
+
+
+def test_billing_status_reports_disabled_by_default():
+    body = client.get("/api/billing/status").json()
+    assert body["billing_enabled"] is False
+    assert body["active_subscription"] is False
+
+
+def test_checkout_unavailable_without_config():
+    response = client.post("/api/billing/checkout", json={"plan": "pro"})
+    assert response.status_code == 503
+
+
+def test_active_subscription_unlocks_assistant(monkeypatch, tmp_path):
+    # An active Pro subscription in the billing store should unlock the
+    # assistant even without GEOBRIEF_PLAN set.
+    store_path = str(tmp_path / "billing.json")
+    monkeypatch.setenv("GEOBRIEF_BILLING_STORE", store_path)
+    BillingStore(store_path).upsert_subscription(
+        "sub_1", status="active", plan_id="pro"
+    )
+    processed = _process_sample()
+    response = client.post(
+        "/api/assistant",
+        json={
+            "question": "summarize the movement",
+            "summary": processed["summary"],
+            "geojson": processed["geojson"],
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["answer"]
+
+
+def test_webhook_rejects_invalid_signature(monkeypatch):
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+    response = client.post(
+        "/api/billing/webhook",
+        content=b'{"type": "ping"}',
+        headers={"stripe-signature": "t=1,v1=deadbeef"},
+    )
+    assert response.status_code == 400

@@ -9,19 +9,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from ..assistant import Assistant, AssistantConfig
+from ..billing import BillingError, BillingService, effective_plan
 from ..ingest import UnsupportedFileTypeError
 from ..pipeline import __version__, process_bytes
 from ..subscription import (
     Feature,
     PLANS,
-    current_plan,
-    plan_allows,
     upgrade_target,
 )
 
@@ -45,6 +44,11 @@ def health() -> dict:
     return {"status": "ok", "product": "GeoBrief LE", "version": __version__}
 
 
+def _plan_allows(feature: str) -> bool:
+    """True when the app's currently enforced plan grants ``feature``."""
+    return effective_plan().allows(feature)
+
+
 def _assistant_upsell() -> dict:
     """Upsell payload describing the plan needed to unlock the assistant."""
     target = upgrade_target(Feature.AI_ASSISTANT)
@@ -64,13 +68,63 @@ def _assistant_upsell() -> dict:
 @app.get("/api/plans")
 def plans() -> dict:
     """List the subscription plans and report which one is active."""
-    active = current_plan()
+    active = effective_plan()
+    billing_configured = BillingService.from_env().config.configured
     return {
         "current_plan": active.id,
+        "billing_enabled": billing_configured,
         "plans": [
             plan.to_dict(current=plan.id == active.id) for plan in PLANS
         ],
     }
+
+
+class CheckoutRequest(BaseModel):
+    """Request to start a subscription checkout for a plan."""
+
+    plan: str
+
+
+@app.get("/api/billing/status")
+def billing_status() -> dict:
+    """Report whether real billing is configured and the active plan."""
+    service = BillingService.from_env()
+    active = effective_plan()
+    return {
+        "billing_enabled": service.config.configured,
+        "current_plan": active.id,
+        "active_subscription": service.active_plan_id() is not None,
+    }
+
+
+@app.post("/api/billing/checkout")
+def billing_checkout(request: CheckoutRequest) -> JSONResponse:
+    """Create a Stripe Checkout Session and return its redirect URL."""
+    service = BillingService.from_env()
+    if not service.config.configured:
+        raise HTTPException(
+            status_code=503,
+            detail="Billing is not configured on this server.",
+        )
+    try:
+        session = service.create_checkout_session(request.plan)
+    except BillingError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return JSONResponse({"id": session.get("id"), "url": session.get("url")})
+
+
+@app.post("/api/billing/webhook")
+async def billing_webhook(request: Request) -> JSONResponse:
+    """Receive Stripe webhook events (signature-verified) and apply them."""
+    service = BillingService.from_env()
+    payload = await request.body()
+    signature = request.headers.get("stripe-signature")
+    try:
+        event = service.construct_event(payload, signature)
+    except Exception as exc:  # signature/parse failures -> 400, no state change
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    service.apply_event(event)
+    return JSONResponse({"received": True})
 
 
 @app.post("/api/process")
@@ -125,7 +179,7 @@ def assistant_status() -> JSONResponse:
     so the UI can prompt an upgrade. Otherwise report whether the remote
     model is configured (no data leaves the machine on the local backend).
     """
-    if not plan_allows(Feature.AI_ASSISTANT):
+    if not _plan_allows(Feature.AI_ASSISTANT):
         payload = _assistant_upsell()
         payload["available"] = False
         return JSONResponse(payload, status_code=402)
@@ -151,7 +205,7 @@ def assistant(request: AssistantRequest) -> JSONResponse:
     builds an aggregate context from them. When no OpenRouter key is
     configured the answer is produced locally and nothing leaves the machine.
     """
-    if not plan_allows(Feature.AI_ASSISTANT):
+    if not _plan_allows(Feature.AI_ASSISTANT):
         return JSONResponse(_assistant_upsell(), status_code=402)
     if not request.summary:
         raise HTTPException(
