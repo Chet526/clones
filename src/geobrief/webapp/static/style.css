@@ -98,6 +98,24 @@ fieldset legend {
 }
 .new-case-row button { white-space: nowrap; margin: 0; }
 
+.time-filter {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.time-filter .field { flex: 1; min-width: 12rem; margin: 0.5rem 0; }
+.time-filter input[type="datetime-local"] {
+  width: 100%;
+  padding: 0.55rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1rem;
+}
+.time-filter button { margin: 0.5rem 0; }
+
 button {
   cursor: pointer;
   font-size: 1rem;

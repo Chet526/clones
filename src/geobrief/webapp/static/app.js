@@ -116,6 +116,78 @@ function renderMap(geojson) {
   }
 }
 
+function featureTime(feature) {
+  const stamp = feature.properties.normalized_timestamp_utc;
+  if (!stamp) return null;
+  const time = new Date(stamp).getTime();
+  return Number.isNaN(time) ? null : time;
+}
+
+function initTimeFilter(geojson) {
+  const times = geojson.features
+    .map(featureTime)
+    .filter((t) => t !== null)
+    .sort((a, b) => a - b);
+  const hasTimes = times.length > 0;
+  el("time-filter").style.display = hasTimes ? "" : "none";
+  el("filter-note").textContent = hasTimes
+    ? ""
+    : "No usable date/time values were found, so time filtering is off.";
+  if (!hasTimes) return;
+  el("filter-from").value = toLocalInputValue(times[0]);
+  el("filter-to").value = toLocalInputValue(times[times.length - 1]);
+}
+
+function toLocalInputValue(epochMs) {
+  const date = new Date(epochMs);
+  const pad = (n) => String(n).padStart(2, "0");
+  return (
+    date.getFullYear() +
+    "-" + pad(date.getMonth() + 1) +
+    "-" + pad(date.getDate()) +
+    "T" + pad(date.getHours()) +
+    ":" + pad(date.getMinutes()) +
+    ":" + pad(date.getSeconds())
+  );
+}
+
+function applyTimeFilter() {
+  if (!lastResult) return;
+  const fromValue = el("filter-from").value;
+  const toValue = el("filter-to").value;
+  const from = fromValue ? new Date(fromValue).getTime() : null;
+  const to = toValue ? new Date(toValue).getTime() : null;
+  const all = lastResult.geojson.features;
+  const kept = all.filter((feature) => {
+    const time = featureTime(feature);
+    if (time === null) return false;
+    if (from !== null && time < from) return false;
+    if (to !== null && time > to) return false;
+    return true;
+  });
+  renderMap({ type: "FeatureCollection", features: kept });
+  const skippedNoTime = all.filter((f) => featureTime(f) === null).length;
+  let note =
+    "Showing " + kept.length + " of " + all.length + " points in this time window.";
+  if (skippedNoTime) {
+    note += " " + skippedNoTime + " points have no time and are hidden while filtering.";
+  }
+  el("filter-note").textContent = note;
+}
+
+function clearTimeFilter() {
+  if (!lastResult) return;
+  initTimeFilter(lastResult.geojson);
+  renderMap(lastResult.geojson);
+  el("filter-note").textContent =
+    "Showing all " + lastResult.geojson.features.length + " points.";
+}
+
+function wireTimeFilter() {
+  el("filter-apply").addEventListener("click", applyTimeFilter);
+  el("filter-clear").addEventListener("click", clearTimeFilter);
+}
+
 function download(filename, text, mime) {
   const blob = new Blob([text], { type: mime });
   triggerBlobDownload(filename, blob);
@@ -181,6 +253,7 @@ async function handleSubmit(event) {
     el("plain-summary").textContent = data.summary.plain_english;
     renderStats(data.summary);
     renderWarnings(data.summary);
+    initTimeFilter(data.geojson);
     renderMap(data.geojson);
     setStatus("Done. Review your map and download your outputs below.");
     el("results-card").scrollIntoView({ behavior: "smooth" });
@@ -553,6 +626,7 @@ document.addEventListener("DOMContentLoaded", () => {
   el("file-input").addEventListener("change", detectColumns);
   el("new-case-btn").addEventListener("click", createCase);
   wireDownloads();
+  wireTimeFilter();
   wireAssistant();
   wirePlans();
   loadCases();

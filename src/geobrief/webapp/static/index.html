@@ -115,6 +115,23 @@
       </div>
 
       <h2>Step 5 &mdash; Your map</h2>
+      <div class="time-filter" id="time-filter">
+        <label class="field">
+          <span>From</span>
+          <input type="datetime-local" id="filter-from" step="1" />
+        </label>
+        <label class="field">
+          <span>To</span>
+          <input type="datetime-local" id="filter-to" step="1" />
+        </label>
+        <button type="button" id="filter-apply" class="secondary">
+          Filter time
+        </button>
+        <button type="button" id="filter-clear" class="secondary">
+          Show all
+        </button>
+      </div>
+      <p class="hint" id="filter-note"></p>
       <div id="map"></div>
 
       <h2>Step 6 &mdash; Download your outputs</h2>
