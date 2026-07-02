@@ -2,7 +2,7 @@
 
 _Last updated: 2026-07-02_
 
-This document assesses where the project stands today and lays out a concrete plan to complete it, phase by phase, against the roadmap in [`docs/PRD.md`](https://github.com/Chet526/clones/blob/copilot/upload-prd/docs/PRD.md) (currently on PR #1).
+This document assesses where the project stands today and lays out a concrete plan to complete it, phase by phase, against the roadmap in [`docs/PRD.md`](PRD.md).
 
 ---
 
@@ -12,13 +12,11 @@ This document assesses where the project stands today and lays out a concrete pl
 
 | Branch / PR | Contents | Status |
 |---|---|---|
-| `main` | Empty (README stub only) | Nothing merged yet |
-| PR [#1](https://github.com/Chet526/clones/pull/1) (`copilot/upload-prd`) | Full Phase 1 prototype + PRD + extras | Open **draft**, all 82 tests passing |
-| PR [#2](https://github.com/Chet526/clones/pull/2) (this branch) | This plan | Open |
+| `main` | Full Phase 1 prototype + PRD + this plan | PRs [#1](https://github.com/Chet526/clones/pull/1) and [#2](https://github.com/Chet526/clones/pull/2) merged |
 
-**Key takeaway:** all product work lives on PR #1 and is unmerged. Nothing ships until it lands on `main`.
+**Key takeaway:** the Phase 1 prototype has shipped to `main` (all 82 tests passing). Milestone 0 is nearly done — CI is in place; tag `v0.1.0` and open Phase 2 tracking issues next.
 
-### What is built (verified working on PR #1 — `pip install -e .` + `pytest`: 82/82 pass)
+### What is built (verified working on `main` — `pip install -e .` + `pytest`: 82/82 pass)
 
 **Phase 1 (Prototype) — ✅ complete**
 
@@ -51,10 +49,9 @@ This document assesses where the project stands today and lays out a concrete pl
 
 ### Milestone 0 — Ship what exists (immediate)
 
-1. **Review and merge PR #1 into `main`.** It is a passing, self-contained Phase 1 prototype; keeping it as an ever-growing draft blocks everything downstream.
-2. Mark PR #1 ready-for-review, resolve any review feedback, merge.
-3. Add CI (GitHub Actions: `pip install -e .` + `pytest` on push/PR) so future work is gated automatically.
-4. Tag `v0.1.0` (Phase 1 prototype).
+1. ✅ **PR #1 merged into `main`.** The passing, self-contained Phase 1 prototype has shipped.
+2. ✅ CI added (GitHub Actions: `pip install -e ".[dev]"` + `pytest` on push/PR, Python 3.10–3.12) so future work is gated automatically.
+3. Tag `v0.1.0` (Phase 1 prototype).
 
 ### Milestone 1 — Phase 2: MVP (`v0.2.0`)
 
@@ -97,7 +94,7 @@ Live ping module, mobile companion, team collaboration, prosecutor viewer, cloud
 
 ## 4. Immediate next actions
 
-1. ☐ Merge PR #1 (unblocks everything)
-2. ☐ Add CI workflow
+1. ☑ Merge PR #1 (done — Phase 1 shipped to `main`)
+2. ☑ Add CI workflow (`.github/workflows/ci.yml`)
 3. ☐ Tag `v0.1.0`
 4. ☐ Open tracking issues for the seven Phase 2 work items above
