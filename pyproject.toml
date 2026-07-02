@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "geobrief"
+version = "0.1.0"
+description = "GeoBrief LE — local-first investigator location evidence processor (Phase 1 prototype)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.2,<3",
+    "openpyxl>=3.1,<4",
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.34,<1",
+    "python-dateutil>=2.9,<3",
+    "python-multipart>=0.0.32,<1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "httpx>=0.28,<1"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
