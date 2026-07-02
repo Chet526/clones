@@ -24,6 +24,7 @@ from ..models import ColumnMapping
 from ..pipeline import __version__, process_bytes
 from ..report import build_pdf_report
 from ..store import CaseStore
+from ..training import TRAINING_SAMPLE_FILENAME, training_sample_bytes
 from ..subscription import (
     Feature,
     PLANS,
@@ -239,6 +240,17 @@ def _mapping_override(
     )
 
 
+@app.get("/api/training/sample")
+def training_sample() -> JSONResponse:
+    """The bundled, clearly fake practice file for training mode."""
+    return JSONResponse(
+        {
+            "filename": TRAINING_SAMPLE_FILENAME,
+            "csv": training_sample_bytes().decode("utf-8"),
+        }
+    )
+
+
 @app.post("/api/process")
 async def process(
     file: UploadFile = File(...),
@@ -249,6 +261,7 @@ async def process(
     longitude_column: str = Form(""),
     timestamp_column: str = Form(""),
     accuracy_column: str = Form(""),
+    training: str = Form(""),
 ) -> JSONResponse:
     """Process an uploaded CSV/XLSX file and return summary + map data."""
     data = await file.read()
@@ -267,6 +280,7 @@ async def process(
                 timestamp_column,
                 accuracy_column,
             ),
+            training=training.strip().lower() in {"1", "true", "yes", "on"},
         )
     except UnsupportedFileTypeError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

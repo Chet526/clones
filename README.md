@@ -7,24 +7,32 @@ location records (spreadsheets, provider returns, phone/app records) into a
 cleaned data set, a map, and report-ready outputs — without needing GIS
 training or advanced spreadsheet skills.
 
-> This repository currently implements the **Phase 1 prototype** from the
-> [product requirements document](docs/PRD.md). See the roadmap in the PRD for
-> what comes next.
+> This repository implements the **Phase 1 prototype** and the **Phase 2
+> MVP features** from the [product requirements document](docs/PRD.md). See
+> the roadmap in the PRD for what comes next.
 
-## What Phase 1 does
+## What it does
 
 Upload a CSV or Excel file and GeoBrief LE will:
 
 - **Hash the original file** (SHA-256) for evidence integrity — the source
   file is only read, never altered.
 - **Auto-detect** latitude, longitude, timestamp, and accuracy columns, with a
-  confidence level for each.
+  confidence level for each — and let you **manually map columns** when
+  detection is wrong or unsure.
 - **Clean and validate** every row: parse coordinates, normalize timestamps to
   UTC, convert to a display time zone, and flag missing, invalid, duplicate,
   low-accuracy, reversed, or time-zone-uncertain points — **without ever
   deleting rows**.
-- **Produce outputs**: an interactive map, a cleaned spreadsheet (CSV), a JSON
-  processing summary, and map-ready GeoJSON.
+- **Produce outputs**: an interactive map with a **date/time filter**, a
+  cleaned spreadsheet (CSV), a JSON processing summary, map-ready GeoJSON, a
+  **Google Earth KML file**, and a **PDF processing report** with hashes,
+  counts, warnings, and a time-zone statement.
+- **Keep a case workspace**: create local cases, register imported files
+  (originals preserved byte-for-byte), record exports, and maintain a
+  **tamper-evident audit log** (SHA-256 hash chain).
+- **Training mode**: practice the whole workflow on bundled fake data — every
+  training output is clearly watermarked.
 
 ## Requirements
 
@@ -44,8 +52,10 @@ pip install -e .            # or: pip install -r requirements.txt
 python -m geobrief serve
 ```
 
-Then open <http://127.0.0.1:8000>, choose a file, pick a display time zone,
-and click **Process file**. Your data never leaves your machine.
+Then open <http://127.0.0.1:8000> and follow the wizard: choose a file (or
+click **Practice with sample data** for training mode), confirm the detected
+columns, pick a display time zone, and click **Process file**. You can
+optionally attach the upload to a case. Your data never leaves your machine.
 
 ## Use it — command line
 
@@ -54,13 +64,29 @@ python -m geobrief process sample_data/sample_locations.csv \
     --tz America/Chicago --out ./out
 ```
 
-This writes `*_cleaned.csv`, `*_summary.json`, and `*_points.geojson` next to
-the input (or into `--out`).
+This writes `*_cleaned.csv`, `*_summary.json`, `*_points.geojson`, `*.kml`
+(Google Earth), and `*_report.pdf` next to the input (or into `--out`).
+Add `--training` to watermark all outputs as practice data.
+
+### Case workspace and audit log
+
+```bash
+python -m geobrief case create --number 24-001234 \
+    --agency "Example PD" --investigator "Det. Smith"
+python -m geobrief case list
+python -m geobrief process records.csv --case 1 --tz America/Chicago
+python -m geobrief case audit 1     # prints the log and verifies the hash chain
+```
+
+Cases live in a local SQLite database under `~/.geobrief` (override with
+`GEOBRIEF_HOME`). Imported originals are stored byte-for-byte and every
+import, hash, processing run, and export is written to a tamper-evident
+audit chain.
 
 ## Ask the AI assistant
 
 An investigator assistant helps you make sense of the processed data — in the
-web app (Step 5, "Ask the assistant") or from the command line:
+web app (Step 7, "Ask the assistant") or from the command line:
 
 ```bash
 python -m geobrief ask sample_data/sample_locations.csv "summarize the movement" \

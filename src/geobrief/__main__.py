@@ -37,6 +37,7 @@ def _cmd_process(args: argparse.Namespace) -> int:
         input_path,
         display_timezone=args.tz,
         assume_source_timezone=args.assume_tz,
+        training=args.training,
     )
 
     out_dir = Path(args.out) if args.out else input_path.parent
@@ -224,6 +225,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help="Case ID to record this file and its exports under.",
+    )
+    p_process.add_argument(
+        "--training",
+        action="store_true",
+        help="Training mode: watermark all outputs as practice data.",
     )
     p_process.set_defaults(func=_cmd_process)
 

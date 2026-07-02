@@ -116,6 +116,23 @@ def build_pdf_report(
 
     story = [
         Paragraph("GeoBrief LE — Processing Report", styles["title"]),
+    ]
+    if result.training_mode:
+        from .training import TRAINING_NOTICE
+
+        story.append(
+            Paragraph(
+                f"<b>{escape(TRAINING_NOTICE)}</b>",
+                ParagraphStyle(
+                    "training",
+                    parent=styles["body"],
+                    textColor=colors.HexColor("#b91c1c"),
+                    fontSize=12,
+                    alignment=1,
+                ),
+            )
+        )
+    story += [
         Paragraph(
             f"Generated {escape(result.processed_at)} · "
             f"GeoBrief LE version {escape(summary['version'])}",

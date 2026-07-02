@@ -116,6 +116,17 @@ fieldset legend {
 }
 .time-filter button { margin: 0.5rem 0; }
 
+.training-btn { width: 100%; margin-top: 0.5rem; }
+.training-banner {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  margin: 0.75rem 0;
+}
+
 button {
   cursor: pointer;
   font-size: 1rem;

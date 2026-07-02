@@ -215,6 +215,38 @@ function baseName() {
   return name.replace(/\.[^.]+$/, "");
 }
 
+async function processFormData(formData) {
+  setStatus("Processing… the software is doing the hard part.");
+  el("process-btn").disabled = true;
+  try {
+    const response = await fetch("/api/process", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || "Processing failed.");
+    }
+    lastResult = data;
+    el("results-card").classList.remove("hidden");
+    el("training-banner").classList.toggle(
+      "hidden",
+      !data.summary.training_mode
+    );
+    el("plain-summary").textContent = data.summary.plain_english;
+    renderStats(data.summary);
+    renderWarnings(data.summary);
+    initTimeFilter(data.geojson);
+    renderMap(data.geojson);
+    setStatus("Done. Review your map and download your outputs below.");
+    el("results-card").scrollIntoView({ behavior: "smooth" });
+  } catch (err) {
+    setStatus(err.message, true);
+  } finally {
+    el("process-btn").disabled = false;
+  }
+}
+
 async function handleSubmit(event) {
   event.preventDefault();
   const fileInput = el("file-input");
@@ -235,32 +267,27 @@ async function handleSubmit(event) {
     formData.append("timestamp_column", el("map-timestamp").value);
     formData.append("accuracy_column", el("map-accuracy").value);
   }
+  await processFormData(formData);
+}
 
-  setStatus("Processing… the software is doing the hard part.");
-  el("process-btn").disabled = true;
-
+async function startTraining() {
   try {
-    const response = await fetch("/api/process", {
-      method: "POST",
-      body: formData,
-    });
+    const response = await fetch("/api/training/sample");
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.detail || "Processing failed.");
+      throw new Error(data.detail || "Could not load the practice file.");
     }
-    lastResult = data;
-    el("results-card").classList.remove("hidden");
-    el("plain-summary").textContent = data.summary.plain_english;
-    renderStats(data.summary);
-    renderWarnings(data.summary);
-    initTimeFilter(data.geojson);
-    renderMap(data.geojson);
-    setStatus("Done. Review your map and download your outputs below.");
-    el("results-card").scrollIntoView({ behavior: "smooth" });
+    const formData = new FormData();
+    formData.append(
+      "file",
+      new Blob([data.csv], { type: "text/csv" }),
+      data.filename
+    );
+    formData.append("display_timezone", el("tz-select").value);
+    formData.append("training", "true");
+    await processFormData(formData);
   } catch (err) {
     setStatus(err.message, true);
-  } finally {
-    el("process-btn").disabled = false;
   }
 }
 
@@ -625,6 +652,7 @@ document.addEventListener("DOMContentLoaded", () => {
   el("upload-form").addEventListener("submit", handleSubmit);
   el("file-input").addEventListener("change", detectColumns);
   el("new-case-btn").addEventListener("click", createCase);
+  el("training-btn").addEventListener("click", startTraining);
   wireDownloads();
   wireTimeFilter();
   wireAssistant();

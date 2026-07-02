@@ -209,7 +209,12 @@ def _document_description(result: "ProcessingResult") -> str:
     summary = result.summary()
     counts = summary["record_counts"]
     first, last = result.time_range_utc()
-    lines = [
+    lines = []
+    if result.training_mode:
+        from .training import TRAINING_NOTICE
+
+        lines.append(escape(TRAINING_NOTICE))
+    lines += [
         "GeoBrief LE export.",
         f"Source file: {escape(result.filename)}",
         f"SHA-256: {escape(result.sha256)}",
@@ -274,11 +279,16 @@ def build_kml(result: "ProcessingResult") -> str:
         )
 
     folders_xml = "\n".join(folders)
+    doc_name = (
+        f"TRAINING — GeoBrief LE — {filename}"
+        if result.training_mode
+        else f"GeoBrief LE — {filename}"
+    )
     return (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<kml xmlns="http://www.opengis.net/kml/2.2">\n'
         "  <Document>\n"
-        f"    <name>GeoBrief LE — {escape(filename)}</name>\n"
+        f"    <name>{escape(doc_name)}</name>\n"
         "    <description><![CDATA["
         f"{_document_description(result)}]]></description>\n"
         f"{_STYLES}\n"

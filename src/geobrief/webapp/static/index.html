@@ -90,6 +90,9 @@
         <button type="submit" id="process-btn" class="primary">
           Process file
         </button>
+        <button type="button" id="training-btn" class="secondary training-btn">
+          Practice with sample data (training mode)
+        </button>
       </form>
       <p id="status" class="status" role="status" aria-live="polite"></p>
     </section>
@@ -104,6 +107,9 @@
     </section>
 
     <section class="card hidden" id="results-card">
+      <div class="training-banner hidden" id="training-banner">
+        TRAINING MODE — practice data, not real evidence.
+      </div>
       <h2>Step 4 &mdash; Review what we found</h2>
       <p id="plain-summary" class="plain-summary"></p>
 

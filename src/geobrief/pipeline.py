@@ -41,6 +41,7 @@ class ProcessingResult:
     records: list[LocationRecord]
     display_timezone: str
     warnings: list[str] = field(default_factory=list)
+    training_mode: bool = False
 
     # --- Derived summary values -----------------------------------------
     @property
@@ -82,6 +83,7 @@ class ProcessingResult:
         return {
             "product": "GeoBrief LE",
             "version": __version__,
+            "training_mode": self.training_mode,
             "source_file": {
                 "filename": self.filename,
                 "sha256": self.sha256,
@@ -108,10 +110,15 @@ class ProcessingResult:
     def _plain_english_summary(self) -> str:
         mappable = len(self.mappable_records)
         flagged = self.total_records - mappable
-        parts = [
+        parts = []
+        if self.training_mode:
+            from .training import TRAINING_NOTICE
+
+            parts.append(TRAINING_NOTICE)
+        parts.append(
             f"I found {self.total_records} records. "
             f"{mappable} have usable coordinates."
-        ]
+        )
         if flagged:
             parts.append(
                 f"{flagged} rows had missing, invalid, or flagged location "
@@ -173,6 +180,7 @@ def process_dataframe(
     display_timezone: str = "UTC",
     assume_source_timezone: Optional[str] = None,
     mapping_override=None,
+    training: bool = False,
 ) -> ProcessingResult:
     """Run detection + cleaning on an already-loaded DataFrame."""
     detection = detect_columns(df)
@@ -200,6 +208,7 @@ def process_dataframe(
         records=records,
         display_timezone=display_timezone,
         warnings=warnings,
+        training_mode=training,
     )
 
 
@@ -210,6 +219,7 @@ def process_bytes(
     display_timezone: str = "UTC",
     assume_source_timezone: Optional[str] = None,
     mapping_override=None,
+    training: bool = False,
 ) -> ProcessingResult:
     """Process raw uploaded bytes end to end."""
     df = read_dataframe_from_bytes(data, filename)
@@ -220,6 +230,7 @@ def process_bytes(
         display_timezone=display_timezone,
         assume_source_timezone=assume_source_timezone,
         mapping_override=mapping_override,
+        training=training,
     )
 
 
@@ -228,6 +239,7 @@ def process_file(
     *,
     display_timezone: str = "UTC",
     assume_source_timezone: Optional[str] = None,
+    training: bool = False,
 ) -> ProcessingResult:
     """Process a file from disk end to end (original file is only read)."""
     path = Path(path)
@@ -237,4 +249,5 @@ def process_file(
         path.name,
         display_timezone=display_timezone,
         assume_source_timezone=assume_source_timezone,
+        training=training,
     )
