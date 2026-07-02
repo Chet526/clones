@@ -283,6 +283,10 @@ _SYSTEM_PROMPT = (
     "explain it.\n"
     "- Be concise, plain-spoken, and neutral. Prefer short paragraphs or "
     "bullet points.\n"
+    "- When the context includes 'tool_results', those are exact, locally "
+    "computed analysis results (nearest points, time gaps, dwell clusters, "
+    "time-window matches, implausible-speed checks). Treat them as ground "
+    "truth and cite the source rows they reference.\n"
     "- When asked for report or warrant language, produce factual DRAFT "
     "language only."
 )
@@ -309,20 +313,35 @@ class Assistant:
         """Answer ``question`` about the processed data.
 
         Returns a mapping with the answer text, which backend produced it,
-        and the mandatory verification disclaimer.
+        the mandatory verification disclaimer, any tool results used, and
+        ``focus_points`` the map can highlight.
         """
         question = (question or "").strip()
         context = build_context(summary, geojson)
 
+        from .geotools import run_tools
+
+        tool_results = run_tools(question, geojson)
+        if tool_results:
+            context["tool_results"] = tool_results
+
         if not question:
             answer_text = self._local_answer("overview", context)
-            return self._wrap(answer_text, backend="local", context=context)
+            return self._wrap(
+                answer_text,
+                backend="local",
+                context=context,
+                tool_results=tool_results,
+            )
 
         if self.config.enabled:
             try:
                 answer_text = self._remote_answer(question, context)
                 return self._wrap(
-                    answer_text, backend="openrouter", context=context
+                    answer_text,
+                    backend="openrouter",
+                    context=context,
+                    tool_results=tool_results,
                 )
             except AssistantError:
                 # Fall back to local rather than failing the investigator.
@@ -331,19 +350,82 @@ class Assistant:
                     answer_text,
                     backend="local-fallback",
                     context=context,
+                    tool_results=tool_results,
                 )
 
         answer_text = self._local_answer(question, context)
-        return self._wrap(answer_text, backend="local", context=context)
+        return self._wrap(
+            answer_text,
+            backend="local",
+            context=context,
+            tool_results=tool_results,
+        )
+
+    @staticmethod
+    def _focus_points(tool_results: dict[str, Any]) -> list[dict[str, Any]]:
+        """Coordinates the UI can highlight for the tool results used."""
+        focus: list[dict[str, Any]] = []
+
+        def add(lat, lon, label):
+            if lat is None or lon is None:
+                return
+            focus.append({"latitude": lat, "longitude": lon, "label": label})
+
+        near = tool_results.get("nearest_points") or {}
+        for point in near.get("points", []):
+            add(
+                point["latitude"],
+                point["longitude"],
+                f"{point['distance_m']} m away (row {point['source_row']})",
+            )
+        for cluster in (tool_results.get("dwell_locations") or {}).get(
+            "clusters", []
+        ):
+            add(
+                cluster["latitude"],
+                cluster["longitude"],
+                f"Dwell: {cluster['point_count']} points",
+            )
+        for gap in (tool_results.get("time_gaps") or {}).get("gaps", [])[:3]:
+            add(
+                gap["from"]["latitude"],
+                gap["from"]["longitude"],
+                f"Gap starts here ({gap['gap_human']})",
+            )
+        for point in (tool_results.get("points_in_window") or {}).get(
+            "points", []
+        ):
+            add(
+                point["latitude"],
+                point["longitude"],
+                f"In window (row {point['source_row']})",
+            )
+        for jump in (tool_results.get("speed_check") or {}).get(
+            "flagged", []
+        )[:3]:
+            add(
+                jump["to"]["latitude"],
+                jump["to"]["longitude"],
+                f"Implausible jump ({jump['speed_kmh']} km/h)",
+            )
+        return focus[:25]
 
     def _wrap(
-        self, answer_text: str, *, backend: str, context: dict
+        self,
+        answer_text: str,
+        *,
+        backend: str,
+        context: dict,
+        tool_results: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
+        tool_results = tool_results or {}
         return {
             "answer": answer_text.strip(),
             "backend": backend,
             "model": self.config.model if backend == "openrouter" else None,
             "disclaimer": DISCLAIMER,
+            "tools_used": sorted(tool_results.keys()),
+            "focus_points": self._focus_points(tool_results),
         }
 
     # -- Remote (OpenRouter) --------------------------------------------------
@@ -399,6 +481,9 @@ class Assistant:
 
     # -- Local deterministic responder ---------------------------------------
     def _local_answer(self, question: str, context: dict) -> str:
+        tool_results = context.get("tool_results") or {}
+        if tool_results:
+            return self._local_tools(tool_results)
         intent = self._classify(question)
         if intent == "missing":
             return self._local_missing(context)
@@ -409,6 +494,113 @@ class Assistant:
         if intent == "filter":
             return self._local_filter(context)
         return self._local_overview(context)
+
+    @staticmethod
+    def _local_tools(tool_results: dict[str, Any]) -> str:
+        """Format deterministic tool output as a plain-English answer."""
+        lines: list[str] = []
+
+        near = tool_results.get("nearest_points")
+        if near:
+            target = near["target"]
+            lines.append(
+                f"Points nearest to ({target['latitude']}, "
+                f"{target['longitude']})"
+                + (
+                    f" within {near['radius_m']:.0f} m"
+                    if near.get("radius_m")
+                    else ""
+                )
+                + f" — {near['matches']} match(es):"
+            )
+            for point in near["points"]:
+                lines.append(
+                    f"- {point['distance_m']} m away at "
+                    f"({point['latitude']:.5f}, {point['longitude']:.5f}), "
+                    f"{point.get('time_display') or point.get('time_utc') or 'no time'} "
+                    f"(source row {point['source_row']})"
+                )
+
+        gaps = tool_results.get("time_gaps")
+        if gaps:
+            if gaps["gaps"]:
+                lines.append("Largest gaps between consecutive points:")
+                for gap in gaps["gaps"]:
+                    lines.append(
+                        f"- {gap['gap_human']} gap from "
+                        f"{gap['from']['time_utc']} to {gap['to']['time_utc']} "
+                        f"({gap['distance_m']} m apart; rows "
+                        f"{gap['from']['source_row']}→{gap['to']['source_row']})"
+                    )
+            else:
+                lines.append(
+                    "No time gaps could be measured (fewer than two "
+                    "time-stamped points)."
+                )
+
+        dwell = tool_results.get("dwell_locations")
+        if dwell:
+            if dwell["clusters"]:
+                lines.append(
+                    f"Locations where points cluster (within "
+                    f"{dwell['radius_m']:.0f} m, at least "
+                    f"{dwell['min_points']} points):"
+                )
+                for cluster in dwell["clusters"]:
+                    span = (
+                        f", seen {cluster['first_seen_utc']} → "
+                        f"{cluster['last_seen_utc']} ({cluster['span_human']})"
+                        if cluster.get("first_seen_utc")
+                        else ""
+                    )
+                    lines.append(
+                        f"- ({cluster['latitude']}, {cluster['longitude']}): "
+                        f"{cluster['point_count']} points{span}"
+                    )
+            else:
+                lines.append(
+                    "No dwell clusters found with the default settings "
+                    "(3+ points within 150 m)."
+                )
+
+        window = tool_results.get("points_in_window")
+        if window:
+            w = window["window"]
+            lines.append(
+                f"{window['matches']} point(s) between {w['start_utc']} and "
+                f"{w['end_utc']} (UTC)."
+            )
+            for point in window["points"]:
+                lines.append(
+                    f"- ({point['latitude']:.5f}, {point['longitude']:.5f}) "
+                    f"at {point['time_utc']} (source row {point['source_row']})"
+                )
+
+        speed = tool_results.get("speed_check")
+        if speed:
+            if speed["flagged"]:
+                lines.append(
+                    f"Consecutive jumps implying more than "
+                    f"{speed['threshold_kmh']:.0f} km/h (possible data "
+                    "problems, not real travel):"
+                )
+                for jump in speed["flagged"]:
+                    lines.append(
+                        f"- {jump['speed_kmh']} km/h: {jump['distance_m']} m "
+                        f"in {jump['seconds']} s (rows "
+                        f"{jump['from']['source_row']}→{jump['to']['source_row']})"
+                    )
+            else:
+                lines.append(
+                    "No implausible-speed jumps found between consecutive "
+                    "time-stamped points."
+                )
+
+        lines.append(
+            "I highlighted the relevant points on the map. Verify each "
+            "finding against the source rows listed."
+        )
+        return "\n".join(lines)
 
     @staticmethod
     def _classify(question: str) -> str:

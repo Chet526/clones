@@ -42,6 +42,11 @@
       <span class="pill"><span class="dot" aria-hidden="true"></span>Local-first</span>
       <button type="button" id="theme-toggle" title="Switch light/dark mode"
               aria-label="Switch light/dark mode">☾</button>
+      <button type="button" id="assistant-toggle" class="assistant-toggle"
+              title="Open the investigator assistant"
+              aria-label="Toggle assistant panel">
+        <span class="at-icon" aria-hidden="true">✦</span> Assistant
+      </button>
     </div>
   </header>
 
@@ -56,10 +61,11 @@
       <form id="upload-form">
         <label class="dropzone" id="dropzone" for="file-input">
           <input type="file" id="file-input" name="file"
-                 accept=".csv,.xlsx,.xls" required />
+                 accept=".csv,.tsv,.txt,.xlsx,.xls,.json,.geojson,.kml,.kmz,.gpx,.zip"
+                 required />
           <span class="dz-icon" aria-hidden="true">⊕</span>
           <span class="dz-title">Drop your file here or click to browse</span>
-          <span class="dz-sub">CSV, XLSX, or XLS · processed locally, never uploaded</span>
+          <span class="dz-sub">CSV, Excel, JSON, GeoJSON, KML/KMZ, GPX, TXT, or ZIP · processed locally, never uploaded</span>
           <span class="dz-file" id="dz-file"></span>
         </label>
 
@@ -151,6 +157,19 @@
       </div>
 
       <h2><span class="step-badge">5</span>Your map</h2>
+      <div class="map-toolbar">
+        <div class="basemap-switch" role="group" aria-label="Map style">
+          <button type="button" class="bm-btn active" data-basemap="streets">
+            Streets
+          </button>
+          <button type="button" class="bm-btn" data-basemap="satellite">
+            Satellite
+          </button>
+          <button type="button" class="bm-btn" data-basemap="hybrid">
+            Hybrid
+          </button>
+        </div>
+      </div>
       <div class="time-filter" id="time-filter">
         <label class="field">
           <span>From</span>
@@ -180,47 +199,71 @@
         <button id="dl-kml" class="secondary">Google Earth file (KML)</button>
         <button id="dl-pdf" class="secondary">Processing report (PDF)</button>
       </div>
-
-      <h2><span class="step-badge">7</span>Ask the assistant</h2>
-      <div class="upsell hidden" id="assistant-upsell">
-        <p id="assistant-upsell-text"></p>
-        <a href="#pricing-card" class="upsell-cta" id="assistant-upsell-cta">
-          See plans
-        </a>
-      </div>
-      <p class="hint" id="assistant-mode">
-        The assistant helps you make sense of this data. It answers from the
-        processed records only.
-      </p>
-      <div class="suggestions" id="assistant-suggestions">
-        <button type="button" class="chip" data-q="Explain this data">
-          Explain this data
-        </button>
-        <button type="button" class="chip" data-q="What is missing?">
-          What is missing?
-        </button>
-        <button type="button" class="chip" data-q="Summarize the movement">
-          Summarize the movement
-        </button>
-        <button type="button" class="chip" data-q="Explain the time zones">
-          Explain the time zones
-        </button>
-        <button type="button" class="chip" data-q="Suggest filters">
-          Suggest filters
-        </button>
-      </div>
-      <div id="chat-log" class="chat-log" aria-live="polite"></div>
-      <form id="assistant-form" class="assistant-form">
-        <input
-          type="text"
-          id="assistant-input"
-          placeholder="Ask a question about this data…"
-          autocomplete="off"
-        />
-        <button type="submit" id="assistant-send" class="primary">Ask</button>
-      </form>
     </section>
   </main>
+
+  <aside id="assistant-panel" aria-label="Investigator assistant">
+    <div class="ap-header">
+      <div class="ap-title">
+        <span class="at-icon" aria-hidden="true">✦</span>
+        <div>
+          <strong>Investigator assistant</strong>
+          <span class="ap-sub" id="assistant-mode">
+            Answers from the processed records only.
+          </span>
+        </div>
+      </div>
+      <button type="button" id="assistant-close" class="ap-close"
+              aria-label="Close assistant panel">×</button>
+    </div>
+
+    <div class="upsell hidden" id="assistant-upsell">
+      <p id="assistant-upsell-text"></p>
+      <a href="#pricing-card" class="upsell-cta" id="assistant-upsell-cta">
+        See plans
+      </a>
+    </div>
+
+    <div id="chat-log" class="chat-log" aria-live="polite">
+      <div class="chat-msg assistant">
+        <div class="bubble">Process a file, then ask me anything about it —
+I can find points near a location, spot time gaps, cluster dwell spots,
+check a time window, and flag impossible jumps. I highlight my findings
+on the map.</div>
+      </div>
+    </div>
+
+    <div class="suggestions" id="assistant-suggestions">
+      <button type="button" class="chip" data-q="Explain this data">
+        Explain this data
+      </button>
+      <button type="button" class="chip" data-q="What is missing?">
+        What is missing?
+      </button>
+      <button type="button" class="chip" data-q="Summarize the movement">
+        Summarize the movement
+      </button>
+      <button type="button" class="chip" data-q="Are there any gaps in the data?">
+        Find time gaps
+      </button>
+      <button type="button" class="chip" data-q="Where did the device stay the longest?">
+        Find dwell spots
+      </button>
+      <button type="button" class="chip" data-q="Any impossible jumps?">
+        Check for impossible jumps
+      </button>
+    </div>
+
+    <form id="assistant-form" class="assistant-form">
+      <input
+        type="text"
+        id="assistant-input"
+        placeholder="Ask about this data…"
+        autocomplete="off"
+      />
+      <button type="submit" id="assistant-send" class="primary">Ask</button>
+    </form>
+  </aside>
 
   <footer>
     <p>

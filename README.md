@@ -13,7 +13,9 @@ training or advanced spreadsheet skills.
 
 ## What it does
 
-Upload a CSV or Excel file and GeoBrief LE will:
+Upload location records in almost any common format — **CSV, TSV/TXT, Excel,
+JSON, GeoJSON, KML/KMZ (Google Earth), GPX, or a ZIP of any of these** — and
+GeoBrief LE will:
 
 - **Hash the original file** (SHA-256) for evidence integrity — the source
   file is only read, never altered.
@@ -24,10 +26,11 @@ Upload a CSV or Excel file and GeoBrief LE will:
   UTC, convert to a display time zone, and flag missing, invalid, duplicate,
   low-accuracy, reversed, or time-zone-uncertain points — **without ever
   deleting rows**.
-- **Produce outputs**: an interactive map with a **date/time filter**, a
-  cleaned spreadsheet (CSV), a JSON processing summary, map-ready GeoJSON, a
-  **Google Earth KML file**, and a **PDF processing report** with hashes,
-  counts, warnings, and a time-zone statement.
+- **Produce outputs**: an interactive map with a **date/time filter** and
+  **street / satellite / hybrid views**, a cleaned spreadsheet (CSV), a JSON
+  processing summary, map-ready GeoJSON, a **Google Earth KML file**, and a
+  **PDF processing report** with hashes, counts, warnings, and a time-zone
+  statement.
 - **Keep a case workspace**: create local cases, register imported files
   (originals preserved byte-for-byte), record exports, and maintain a
   **tamper-evident audit log** (SHA-256 hash chain).
@@ -85,8 +88,8 @@ audit chain.
 
 ## Ask the AI assistant
 
-An investigator assistant helps you make sense of the processed data — in the
-web app (Step 7, "Ask the assistant") or from the command line:
+An investigator assistant lives in a side panel of the web app (click
+**✦ Assistant**) and is also available from the command line:
 
 ```bash
 python -m geobrief ask sample_data/sample_locations.csv "summarize the movement" \
@@ -95,6 +98,18 @@ python -m geobrief ask sample_data/sample_locations.csv "summarize the movement"
 
 Try questions like *"explain this data"*, *"what is missing?"*, *"summarize the
 movement"*, *"explain the time zones"*, or *"suggest filters"*.
+
+The assistant also has **local analysis tools** it runs automatically when a
+question calls for them — entirely on your machine — and highlights its
+findings on the map:
+
+| Tool | Ask something like |
+| --- | --- |
+| Nearest points | "what points are near 41.8837, -87.6319 within 500 m?" |
+| Time gaps | "are there any gaps in the data?" |
+| Dwell locations | "where did the device stay the longest?" |
+| Time window | "which points are between 2024-03-01T08:00 and 2024-03-01T12:00?" |
+| Impossible jumps | "any impossible jumps or speed problems?" |
 
 > **The AI assistant is a Pro-plan feature.** See [Plans & pricing](#plans--pricing).
 > In the web app the assistant endpoints require the Pro plan; the Standard

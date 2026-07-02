@@ -51,7 +51,7 @@ def test_process_endpoint():
 
 
 def test_unsupported_file_type_rejected():
-    files = {"file": ("notes.txt", io.BytesIO(b"hello"), "text/plain")}
+    files = {"file": ("notes.docx", io.BytesIO(b"hello"), "text/plain")}
     response = client.post("/api/process", files=files)
     assert response.status_code == 400
 
@@ -83,7 +83,7 @@ def test_detect_endpoint_reports_columns_and_mapping():
 
 
 def test_detect_rejects_unsupported_type():
-    files = {"file": ("notes.txt", io.BytesIO(b"hello"), "text/plain")}
+    files = {"file": ("notes.docx", io.BytesIO(b"hello"), "text/plain")}
     response = client.post("/api/detect", files=files)
     assert response.status_code == 400
 

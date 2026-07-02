@@ -704,6 +704,161 @@ button.secondary:hover {
 .assistant-form button { width: auto; flex: 0 0 auto; }
 .assistant-form input:disabled { opacity: 0.55; }
 
+/* ---- Assistant side panel (Copilot-style) -------------------------------- */
+
+.assistant-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: linear-gradient(94deg,
+    color-mix(in srgb, var(--accent) 18%, transparent),
+    color-mix(in srgb, var(--accent-2) 18%, transparent));
+  color: var(--text);
+  font-weight: 650;
+  font-size: 0.9rem;
+}
+.assistant-toggle:hover {
+  border-color: var(--accent);
+  box-shadow: var(--glow);
+}
+.at-icon {
+  color: var(--accent);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent));
+}
+
+#assistant-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(420px, 92vw);
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem 1.1rem;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  border-left: 1px solid var(--border-strong);
+  box-shadow: -18px 0 48px rgba(2, 6, 23, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transform: translateX(100%);
+  transition: transform 0.28s ease;
+}
+body.assistant-open #assistant-panel { transform: translateX(0); }
+body.assistant-open main,
+body.assistant-open footer {
+  margin-right: min(420px, 92vw);
+  transition: margin-right 0.28s ease;
+}
+@media (max-width: 900px) {
+  body.assistant-open main,
+  body.assistant-open footer { margin-right: 0; }
+}
+
+.ap-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--border);
+}
+.ap-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  min-width: 0;
+}
+.ap-title .at-icon { font-size: 1.25rem; margin-top: 0.1rem; }
+.ap-title strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.ap-sub {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 0.15rem;
+}
+.ap-close {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.ap-close:hover { border-color: var(--accent); color: var(--text); }
+
+#assistant-panel .chat-log {
+  flex: 1;
+  max-height: none;
+  margin: 0;
+  padding-right: 0.25rem;
+}
+#assistant-panel .suggestions { margin: 0; }
+#assistant-panel .chip { font-size: 0.8rem; padding: 0.35rem 0.75rem; }
+
+/* ---- Map toolbar / basemap switcher --------------------------------------- */
+
+.map-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0.4rem 0 0.1rem;
+}
+.basemap-switch {
+  display: inline-flex;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--bg-elevated) 65%, transparent);
+}
+.bm-btn {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.45rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.bm-btn + .bm-btn { border-left: 1px solid var(--border); }
+.bm-btn.active {
+  color: var(--accent-ink);
+  background: linear-gradient(94deg, var(--accent), var(--accent-2));
+  box-shadow: var(--glow);
+}
+.bm-btn:not(.active):hover { color: var(--text); }
+
+/* Focus markers the assistant drops on the map. */
+.focus-marker {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-3);
+  background: color-mix(in srgb, var(--accent-3) 35%, transparent);
+  box-shadow: 0 0 12px var(--accent-3), 0 0 26px color-mix(in srgb, var(--accent-3) 55%, transparent);
+  animation: focus-pulse 1.6s ease-out infinite;
+}
+@keyframes focus-pulse {
+  0% { transform: scale(0.85); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(0.85); }
+}
+
 /* ---- Plans ------------------------------------------------------------ */
 
 .plan-grid {

@@ -212,6 +212,10 @@ def detect_columns(df: pd.DataFrame) -> DetectionResult:
         lambda s: _numeric_fraction(s, 0, 1_000_000),
         exclude=acc_exclude,
     )
+    # Numeric content alone says nothing about accuracy — any number column
+    # (altitude, speed, IDs) would match. Require a header hint.
+    if acc_col is not None and acc_h == 0:
+        acc_col, acc_h, acc_c = None, 0.0, 0.0
 
     confidence["latitude"] = (
         _combine(lat_h, lat_c) if lat_col else Confidence.UNKNOWN

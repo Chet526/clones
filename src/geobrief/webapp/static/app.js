@@ -6,22 +6,36 @@
 
 let map = null;
 let layerGroup = null;
+let focusGroup = null;
 let tileLayer = null;
+let labelLayer = null;
+let basemapChoice = "streets";
 let lastResult = null;
 let assistantAvailable = true;
 let billingEnabled = false;
 
 const THEME_KEY = "geobrief-theme";
+const PANEL_KEY = "geobrief-assistant-open";
+const CARTO_ATTR =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+const ESRI_ATTR =
+  "Imagery &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community";
 const BASEMAPS = {
-  dark: {
-    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  streets: {
+    dark: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    light:
+      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+    attribution: CARTO_ATTR,
   },
-  light: {
-    url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  satellite: {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: ESRI_ATTR,
+  },
+  hybrid: {
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    labels:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+    attribution: ESRI_ATTR,
   },
 };
 
@@ -45,12 +59,34 @@ function applyTheme(theme) {
 
 function refreshBasemap() {
   if (!map) return;
-  const base = BASEMAPS[currentTheme()];
+  const base = BASEMAPS[basemapChoice] || BASEMAPS.streets;
   if (tileLayer) map.removeLayer(tileLayer);
-  tileLayer = L.tileLayer(base.url, {
+  if (labelLayer) {
+    map.removeLayer(labelLayer);
+    labelLayer = null;
+  }
+  const url =
+    basemapChoice === "streets" ? base[currentTheme()] : base.url;
+  tileLayer = L.tileLayer(url, {
     maxZoom: 19,
     attribution: base.attribution,
   }).addTo(map);
+  if (base.labels) {
+    labelLayer = L.tileLayer(base.labels, { maxZoom: 19 }).addTo(map);
+  }
+}
+
+function wireBasemapSwitch() {
+  document.querySelectorAll(".bm-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      basemapChoice = button.getAttribute("data-basemap");
+      document
+        .querySelectorAll(".bm-btn")
+        .forEach((b) => b.classList.toggle("active", b === button));
+      ensureMap();
+      refreshBasemap();
+    });
+  });
 }
 
 function initTheme() {
@@ -80,7 +116,33 @@ function ensureMap() {
   map = L.map("map", { zoomControl: true });
   refreshBasemap();
   layerGroup = L.layerGroup().addTo(map);
+  focusGroup = L.layerGroup().addTo(map);
   map.setView([20, 0], 2);
+}
+
+function showFocusPoints(points) {
+  if (!map || !focusGroup) return;
+  focusGroup.clearLayers();
+  if (!points || !points.length) return;
+  const bounds = [];
+  for (const point of points) {
+    const icon = L.divIcon({
+      className: "",
+      html: '<div class="focus-marker"></div>',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
+    });
+    const marker = L.marker([point.latitude, point.longitude], {
+      icon: icon,
+      zIndexOffset: 1000,
+    });
+    if (point.label) {
+      marker.bindTooltip(point.label, { direction: "top", offset: [0, -10] });
+    }
+    focusGroup.addLayer(marker);
+    bounds.push([point.latitude, point.longitude]);
+  }
+  map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
 }
 
 function renderStats(summary) {
@@ -319,6 +381,7 @@ async function processFormData(formData) {
     renderWarnings(data.summary);
     initTimeFilter(data.geojson);
     renderMap(data.geojson);
+    if (focusGroup) focusGroup.clearLayers();
     setStatus("Done. Review your map and download your outputs below.");
     el("results-card").scrollIntoView({ behavior: "smooth" });
   } catch (err) {
@@ -469,10 +532,18 @@ async function askAssistant(question) {
     }
     pending.textContent = data.answer;
     const parent = pending.parentElement;
+    if (data.tools_used && data.tools_used.length) {
+      const tools = document.createElement("div");
+      tools.className = "chat-note";
+      tools.textContent =
+        "✦ Tools used: " + data.tools_used.join(", ").replace(/_/g, " ");
+      parent.appendChild(tools);
+    }
     const note = document.createElement("div");
     note.className = "chat-note";
     note.textContent = data.disclaimer;
     parent.appendChild(note);
+    showFocusPoints(data.focus_points);
   } catch (err) {
     pending.textContent = err.message;
     pending.parentElement.classList.add("error");
@@ -481,7 +552,36 @@ async function askAssistant(question) {
   }
 }
 
+function setAssistantPanel(open) {
+  document.body.classList.toggle("assistant-open", open);
+  try {
+    localStorage.setItem(PANEL_KEY, open ? "1" : "0");
+  } catch (err) {
+    /* storage may be unavailable */
+  }
+  if (open) {
+    el("assistant-input").focus();
+  }
+  // The map needs to re-measure after the layout shift.
+  if (map) {
+    setTimeout(() => map.invalidateSize(), 320);
+  }
+}
+
 function wireAssistant() {
+  el("assistant-toggle").addEventListener("click", () =>
+    setAssistantPanel(!document.body.classList.contains("assistant-open"))
+  );
+  el("assistant-close").addEventListener("click", () =>
+    setAssistantPanel(false)
+  );
+  try {
+    if (localStorage.getItem(PANEL_KEY) === "1") {
+      setAssistantPanel(true);
+    }
+  } catch (err) {
+    /* storage may be unavailable */
+  }
   el("assistant-form").addEventListener("submit", (event) => {
     event.preventDefault();
     const input = el("assistant-input");
@@ -776,6 +876,7 @@ document.addEventListener("DOMContentLoaded", () => {
   el("training-btn").addEventListener("click", startTraining);
   wireDownloads();
   wireTimeFilter();
+  wireBasemapSwitch();
   wireAssistant();
   wirePlans();
   loadCases();
