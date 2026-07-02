@@ -40,5 +40,6 @@ def isolated_billing_env(tmp_path, monkeypatch):
     monkeypatch.setenv(
         "GEOBRIEF_BILLING_STORE", str(tmp_path / "billing.json")
     )
+    monkeypatch.setenv("GEOBRIEF_HOME", str(tmp_path / "geobrief_home"))
     yield
 

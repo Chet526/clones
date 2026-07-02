@@ -21,6 +21,7 @@ from ..ingest import UnsupportedFileTypeError
 from ..kml import build_kml
 from ..pipeline import __version__, process_bytes
 from ..report import build_pdf_report
+from ..store import CaseStore
 from ..subscription import (
     Feature,
     PLANS,
@@ -88,6 +89,69 @@ class CheckoutRequest(BaseModel):
     plan: str
 
 
+class CaseCreateRequest(BaseModel):
+    """Request to create a new local case workspace."""
+
+    case_number: str
+    agency: str = ""
+    investigator: str = ""
+    offense_type: str = ""
+    notes: str = ""
+
+
+@app.get("/api/cases")
+def list_cases() -> dict:
+    """List local case workspaces."""
+    with CaseStore() as store:
+        return {"cases": store.list_cases()}
+
+
+@app.post("/api/cases")
+def create_case(request: CaseCreateRequest) -> JSONResponse:
+    """Create a new local case workspace."""
+    try:
+        with CaseStore() as store:
+            case = store.create_case(
+                request.case_number,
+                agency=request.agency,
+                investigator=request.investigator,
+                offense_type=request.offense_type,
+                notes=request.notes,
+            )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return JSONResponse(case, status_code=201)
+
+
+@app.get("/api/cases/{case_id}")
+def case_detail(case_id: int) -> dict:
+    """A case with its source files and exports."""
+    with CaseStore() as store:
+        try:
+            case = store.get_case(case_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        return {
+            "case": case,
+            "source_files": store.list_source_files(case_id),
+            "exports": store.list_exports(case_id),
+        }
+
+
+@app.get("/api/cases/{case_id}/audit")
+def case_audit(case_id: int) -> dict:
+    """A case's tamper-evident audit log."""
+    with CaseStore() as store:
+        try:
+            store.get_case(case_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        return {
+            "events": store.audit_log(case_id),
+            "chain_intact": store.verify_audit_chain(case_id),
+        }
+
+
 @app.get("/api/billing/status")
 def billing_status() -> dict:
     """Report whether real billing is configured and the active plan."""
@@ -135,6 +199,7 @@ async def process(
     file: UploadFile = File(...),
     display_timezone: str = Form("UTC"),
     assume_source_timezone: str = Form(""),
+    case_id: str = Form(""),
 ) -> JSONResponse:
     """Process an uploaded CSV/XLSX file and return summary + map data."""
     data = await file.read()
@@ -162,6 +227,41 @@ async def process(
         f"{stem}_points.geojson",
         f"{stem}.kml",
     ]
+
+    recorded_case = None
+    if case_id.strip():
+        try:
+            case_id_int = int(case_id)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400, detail="case_id must be a number."
+            ) from exc
+        with CaseStore() as store:
+            try:
+                store.add_source_file(
+                    case_id_int, file.filename or "upload", data
+                )
+            except KeyError as exc:
+                raise HTTPException(
+                    status_code=404, detail=str(exc)
+                ) from exc
+            store.log_event(
+                case_id_int,
+                "file_processed",
+                {
+                    "filename": file.filename or "upload",
+                    "sha256": result.sha256,
+                    "display_timezone": result.display_timezone,
+                    "total_records": result.total_records,
+                },
+            )
+            for export_type, name in zip(
+                ("cleaned_csv", "summary_json", "geojson", "kml"),
+                export_names,
+            ):
+                store.record_export(case_id_int, export_type, name)
+            recorded_case = case_id_int
+
     return JSONResponse(
         {
             "summary": result.summary(),
@@ -172,6 +272,7 @@ async def process(
             "report_pdf_base64": base64.b64encode(
                 build_pdf_report(result, exports=export_names)
             ).decode("ascii"),
+            "case_id": recorded_case,
         }
     )
 
