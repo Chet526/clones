@@ -57,6 +57,7 @@ main {
   font-weight: 600;
 }
 .field input[type="file"],
+.field input[type="text"],
 .field select {
   width: 100%;
   padding: 0.6rem;
@@ -66,6 +67,36 @@ main {
   color: var(--text);
   font-size: 1rem;
 }
+
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.5rem 1rem 1rem;
+  margin: 1rem 0;
+}
+fieldset legend {
+  font-weight: 700;
+  padding: 0 0.4rem;
+}
+.field span em {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--muted);
+}
+.new-case-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.new-case-row input {
+  flex: 1;
+  padding: 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1rem;
+}
+.new-case-row button { white-space: nowrap; margin: 0; }
 
 button {
   cursor: pointer;

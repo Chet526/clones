@@ -17,8 +17,10 @@ from pydantic import BaseModel
 
 from ..assistant import Assistant, AssistantConfig
 from ..billing import BillingError, BillingService, effective_plan
-from ..ingest import UnsupportedFileTypeError
+from ..detection import detect_columns
+from ..ingest import UnsupportedFileTypeError, read_dataframe_from_bytes
 from ..kml import build_kml
+from ..models import ColumnMapping
 from ..pipeline import __version__, process_bytes
 from ..report import build_pdf_report
 from ..store import CaseStore
@@ -194,12 +196,59 @@ async def billing_webhook(request: Request) -> JSONResponse:
     return JSONResponse({"received": True})
 
 
+@app.post("/api/detect")
+async def detect(file: UploadFile = File(...)) -> JSONResponse:
+    """Inspect an uploaded file: list its columns and detected mapping.
+
+    Lets the wizard show "confirm detected columns" before processing, so
+    the user can correct the mapping when detection is wrong or unsure.
+    """
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="The file is empty.")
+    try:
+        df = read_dataframe_from_bytes(data, file.filename or "upload")
+    except UnsupportedFileTypeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:  # pragma: no cover - surfaced to the user
+        raise HTTPException(
+            status_code=400, detail=f"Could not read file: {exc}"
+        ) from exc
+    detection = detect_columns(df)
+    return JSONResponse(
+        {
+            "columns": [str(c) for c in df.columns],
+            "row_count": int(len(df)),
+            "detection": detection.to_dict(),
+        }
+    )
+
+
+def _mapping_override(
+    latitude: str, longitude: str, timestamp: str, accuracy: str
+) -> ColumnMapping | None:
+    """Build a manual mapping when any column override was supplied."""
+    values = (latitude, longitude, timestamp, accuracy)
+    if not any(v.strip() for v in values):
+        return None
+    return ColumnMapping(
+        latitude=latitude.strip() or None,
+        longitude=longitude.strip() or None,
+        timestamp=timestamp.strip() or None,
+        accuracy=accuracy.strip() or None,
+    )
+
+
 @app.post("/api/process")
 async def process(
     file: UploadFile = File(...),
     display_timezone: str = Form("UTC"),
     assume_source_timezone: str = Form(""),
     case_id: str = Form(""),
+    latitude_column: str = Form(""),
+    longitude_column: str = Form(""),
+    timestamp_column: str = Form(""),
+    accuracy_column: str = Form(""),
 ) -> JSONResponse:
     """Process an uploaded CSV/XLSX file and return summary + map data."""
     data = await file.read()
@@ -212,6 +261,12 @@ async def process(
             file.filename or "upload",
             display_timezone=display_timezone or "UTC",
             assume_source_timezone=assume_source_timezone or None,
+            mapping_override=_mapping_override(
+                latitude_column,
+                longitude_column,
+                timestamp_column,
+                accuracy_column,
+            ),
         )
     except UnsupportedFileTypeError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

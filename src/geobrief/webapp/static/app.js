@@ -153,6 +153,16 @@ async function handleSubmit(event) {
   const formData = new FormData();
   formData.append("file", fileInput.files[0]);
   formData.append("display_timezone", el("tz-select").value);
+  const caseId = el("case-select").value;
+  if (caseId) {
+    formData.append("case_id", caseId);
+  }
+  if (!el("mapping-fieldset").classList.contains("hidden")) {
+    formData.append("latitude_column", el("map-latitude").value);
+    formData.append("longitude_column", el("map-longitude").value);
+    formData.append("timestamp_column", el("map-timestamp").value);
+    formData.append("accuracy_column", el("map-accuracy").value);
+  }
 
   setStatus("Processing… the software is doing the hard part.");
   el("process-btn").disabled = true;
@@ -432,11 +442,120 @@ async function refreshAssistantMode() {
   }
 }
 
+const CONFIDENCE_LABELS = {
+  high: "(looks right)",
+  medium: "(probably right — please check)",
+  low: "(not sure — please check)",
+  unknown: "(not found — pick one if it exists)",
+};
+
+function fillMappingSelect(id, columns, selected) {
+  const select = el(id);
+  const options = ['<option value="">Not in this file</option>'].concat(
+    columns.map(
+      (c) =>
+        `<option value="${escapeHtml(c)}"${
+          c === selected ? " selected" : ""
+        }>${escapeHtml(c)}</option>`
+    )
+  );
+  select.innerHTML = options.join("");
+}
+
+async function detectColumns() {
+  const fileInput = el("file-input");
+  if (!fileInput.files.length) return;
+  const formData = new FormData();
+  formData.append("file", fileInput.files[0]);
+  setStatus("Looking at your file…");
+  try {
+    const response = await fetch("/api/detect", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || "Could not read the file.");
+    }
+    const mapping = data.detection.mapping;
+    const confidence = data.detection.confidence;
+    fillMappingSelect("map-latitude", data.columns, mapping.latitude);
+    fillMappingSelect("map-longitude", data.columns, mapping.longitude);
+    fillMappingSelect("map-timestamp", data.columns, mapping.timestamp);
+    fillMappingSelect("map-accuracy", data.columns, mapping.accuracy);
+    for (const field of ["latitude", "longitude", "timestamp", "accuracy"]) {
+      el("conf-" + field).textContent =
+        CONFIDENCE_LABELS[confidence[field]] || "";
+    }
+    el("mapping-fieldset").classList.remove("hidden");
+    setStatus(
+      "I found " +
+        data.row_count +
+        " rows. Check the detected columns below, then process the file."
+    );
+  } catch (err) {
+    el("mapping-fieldset").classList.add("hidden");
+    setStatus(err.message, true);
+  }
+}
+
+async function loadCases(selectId) {
+  try {
+    const response = await fetch("/api/cases");
+    if (!response.ok) return;
+    const data = await response.json();
+    const select = el("case-select");
+    const current = selectId != null ? String(selectId) : select.value;
+    select.innerHTML =
+      '<option value="">No case — just process the file</option>' +
+      data.cases
+        .map(
+          (c) =>
+            `<option value="${c.case_id}">[${c.case_id}] ${escapeHtml(
+              c.case_number
+            )}${c.investigator ? " — " + escapeHtml(c.investigator) : ""}` +
+            "</option>"
+        )
+        .join("");
+    if (current) select.value = current;
+  } catch (err) {
+    /* case list is best-effort */
+  }
+}
+
+async function createCase() {
+  const input = el("new-case-number");
+  const caseNumber = input.value.trim();
+  if (!caseNumber) {
+    setStatus("Enter a case number first.", true);
+    return;
+  }
+  try {
+    const response = await fetch("/api/cases", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ case_number: caseNumber }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || "Could not create the case.");
+    }
+    input.value = "";
+    await loadCases(data.case_id);
+    setStatus("Created case " + data.case_number + ".");
+  } catch (err) {
+    setStatus(err.message, true);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   el("upload-form").addEventListener("submit", handleSubmit);
+  el("file-input").addEventListener("change", detectColumns);
+  el("new-case-btn").addEventListener("click", createCase);
   wireDownloads();
   wireAssistant();
   wirePlans();
+  loadCases();
   loadPlans();
   refreshAssistantMode();
 });

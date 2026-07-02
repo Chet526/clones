@@ -62,6 +62,56 @@ def test_empty_file_rejected():
     assert response.status_code == 400
 
 
+def test_detect_endpoint_reports_columns_and_mapping():
+    csv = (
+        "the_lat,the_long,when,radius_m\n"
+        "41.88,-87.62,2024-03-01T08:00:00Z,10\n"
+    )
+    files = {"file": ("records.csv", io.BytesIO(csv.encode()), "text/csv")}
+    response = client.post("/api/detect", files=files)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["columns"] == ["the_lat", "the_long", "when", "radius_m"]
+    assert body["row_count"] == 1
+    assert body["detection"]["mapping"]["latitude"] == "the_lat"
+    assert set(body["detection"]["confidence"]) == {
+        "latitude",
+        "longitude",
+        "timestamp",
+        "accuracy",
+    }
+
+
+def test_detect_rejects_unsupported_type():
+    files = {"file": ("notes.txt", io.BytesIO(b"hello"), "text/plain")}
+    response = client.post("/api/detect", files=files)
+    assert response.status_code == 400
+
+
+def test_process_with_manual_column_mapping():
+    # Column names give detection nothing to work with; the manual mapping
+    # must make the rows mappable anyway.
+    csv = (
+        "a,b,c\n"
+        "41.88,-87.62,2024-03-01T08:00:00Z\n"
+        "41.90,-87.63,2024-03-01T12:00:00Z\n"
+    )
+    files = {"file": ("odd.csv", io.BytesIO(csv.encode()), "text/csv")}
+    response = client.post(
+        "/api/process",
+        files=files,
+        data={
+            "latitude_column": "a",
+            "longitude_column": "b",
+            "timestamp_column": "c",
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["summary"]["record_counts"]["mappable"] == 2
+    assert len(body["geojson"]["features"]) == 2
+
+
 def _process_sample():
     csv = (
         "latitude,longitude,timestamp,accuracy_m\n"

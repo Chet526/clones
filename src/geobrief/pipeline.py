@@ -209,6 +209,7 @@ def process_bytes(
     *,
     display_timezone: str = "UTC",
     assume_source_timezone: Optional[str] = None,
+    mapping_override=None,
 ) -> ProcessingResult:
     """Process raw uploaded bytes end to end."""
     df = read_dataframe_from_bytes(data, filename)
@@ -218,6 +219,7 @@ def process_bytes(
         raw_bytes=data,
         display_timezone=display_timezone,
         assume_source_timezone=assume_source_timezone,
+        mapping_override=mapping_override,
     )
 
 

@@ -34,7 +34,48 @@
         </label>
 
         <label class="field">
-          <span>Show times in</span>
+          <span>Case (optional)</span>
+          <select id="case-select" name="case_id">
+            <option value="" selected>No case — just process the file</option>
+          </select>
+        </label>
+        <div class="field new-case">
+          <span>Or start a new case</span>
+          <div class="new-case-row">
+            <input type="text" id="new-case-number"
+                   placeholder="Case number, e.g. 24-001234" />
+            <button type="button" id="new-case-btn" class="secondary">
+              Create case
+            </button>
+          </div>
+        </div>
+
+        <fieldset id="mapping-fieldset" class="hidden">
+          <legend>Step 2 &mdash; Confirm detected columns</legend>
+          <p class="hint" id="mapping-hint">
+            We looked at your file and guessed these columns. Fix any that
+            are wrong, then continue.
+          </p>
+          <label class="field">
+            <span>Latitude column <em id="conf-latitude"></em></span>
+            <select id="map-latitude"></select>
+          </label>
+          <label class="field">
+            <span>Longitude column <em id="conf-longitude"></em></span>
+            <select id="map-longitude"></select>
+          </label>
+          <label class="field">
+            <span>Date/time column <em id="conf-timestamp"></em></span>
+            <select id="map-timestamp"></select>
+          </label>
+          <label class="field">
+            <span>Accuracy column <em id="conf-accuracy"></em></span>
+            <select id="map-accuracy"></select>
+          </label>
+        </fieldset>
+
+        <label class="field">
+          <span>Step 3 &mdash; Show times in</span>
           <select id="tz-select" name="display_timezone">
             <option value="UTC" selected>UTC (original)</option>
             <option value="America/New_York">Eastern Time</option>
@@ -63,7 +104,7 @@
     </section>
 
     <section class="card hidden" id="results-card">
-      <h2>Step 2 &mdash; Review what we found</h2>
+      <h2>Step 4 &mdash; Review what we found</h2>
       <p id="plain-summary" class="plain-summary"></p>
 
       <div class="stat-grid" id="stat-grid"></div>
@@ -73,10 +114,10 @@
         <ul id="warning-list"></ul>
       </div>
 
-      <h2>Step 3 &mdash; Your map</h2>
+      <h2>Step 5 &mdash; Your map</h2>
       <div id="map"></div>
 
-      <h2>Step 4 &mdash; Download your outputs</h2>
+      <h2>Step 6 &mdash; Download your outputs</h2>
       <div class="downloads">
         <button id="dl-csv" class="secondary">Cleaned spreadsheet (CSV)</button>
         <button id="dl-json" class="secondary">Processing report (JSON)</button>
@@ -85,7 +126,7 @@
         <button id="dl-pdf" class="secondary">Processing report (PDF)</button>
       </div>
 
-      <h2>Step 5 &mdash; Ask the assistant</h2>
+      <h2>Step 7 &mdash; Ask the assistant</h2>
       <div class="upsell hidden" id="assistant-upsell">
         <p id="assistant-upsell-text"></p>
         <a href="#pricing-card" class="upsell-cta" id="assistant-upsell-cta">
