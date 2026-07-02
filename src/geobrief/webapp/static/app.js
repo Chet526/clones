@@ -1,14 +1,67 @@
 "use strict";
 
-// GeoBrief LE — Phase 1 front-end. Talks to the local FastAPI server, shows a
+// GeoBrief LE front-end. Talks to the local FastAPI server, shows a
 // plain-English summary, plots mappable points on a Leaflet map (with accuracy
-// circles), and offers the cleaned CSV / JSON / GeoJSON as downloads.
+// circles and a movement path), and offers all outputs as downloads.
 
 let map = null;
 let layerGroup = null;
+let tileLayer = null;
 let lastResult = null;
 let assistantAvailable = true;
 let billingEnabled = false;
+
+const THEME_KEY = "geobrief-theme";
+const BASEMAPS = {
+  dark: {
+    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  },
+  light: {
+    url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  },
+};
+
+function currentTheme() {
+  return document.documentElement.dataset.theme === "light"
+    ? "light"
+    : "dark";
+}
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch (err) {
+    /* storage may be unavailable */
+  }
+  const toggle = el("theme-toggle");
+  if (toggle) toggle.textContent = theme === "light" ? "☾" : "☀";
+  refreshBasemap();
+}
+
+function refreshBasemap() {
+  if (!map) return;
+  const base = BASEMAPS[currentTheme()];
+  if (tileLayer) map.removeLayer(tileLayer);
+  tileLayer = L.tileLayer(base.url, {
+    maxZoom: 19,
+    attribution: base.attribution,
+  }).addTo(map);
+}
+
+function initTheme() {
+  let saved = null;
+  try {
+    saved = localStorage.getItem(THEME_KEY);
+  } catch (err) {
+    /* storage may be unavailable */
+  }
+  applyTheme(saved === "light" ? "light" : "dark");
+}
 
 function el(id) {
   return document.getElementById(id);
@@ -24,11 +77,8 @@ function ensureMap() {
   if (map) {
     return;
   }
-  map = L.map("map");
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap contributors",
-  }).addTo(map);
+  map = L.map("map", { zoomControl: true });
+  refreshBasemap();
   layerGroup = L.layerGroup().addTo(map);
   map.setView([20, 0], 2);
 }
@@ -90,26 +140,57 @@ function popupHtml(props) {
   return html;
 }
 
+function pointMarker(lat, lon, props) {
+  const flagged =
+    props.validation_status !== "valid" ||
+    (props.warnings && props.warnings.length);
+  const icon = L.divIcon({
+    className: "",
+    html: `<div class="geo-marker${flagged ? " flagged" : ""}"></div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+    popupAnchor: [0, -8],
+  });
+  return L.marker([lat, lon], { icon: icon }).bindPopup(popupHtml(props));
+}
+
 function renderMap(geojson) {
   ensureMap();
   layerGroup.clearLayers();
   const bounds = [];
+  const timed = [];
   for (const feature of geojson.features) {
     const [lon, lat] = feature.geometry.coordinates;
     const props = feature.properties;
-    const marker = L.marker([lat, lon]).bindPopup(popupHtml(props));
-    layerGroup.addLayer(marker);
+    layerGroup.addLayer(pointMarker(lat, lon, props));
     if (props.accuracy_radius && props.accuracy_radius > 0) {
       layerGroup.addLayer(
         L.circle([lat, lon], {
           radius: props.accuracy_radius,
-          color: "#2563eb",
+          color: "#22d3ee",
           weight: 1,
-          fillOpacity: 0.08,
+          fillOpacity: 0.07,
         })
       );
     }
+    if (props.normalized_timestamp_utc) {
+      timed.push({ at: props.normalized_timestamp_utc, latlng: [lat, lon] });
+    }
     bounds.push([lat, lon]);
+  }
+  if (timed.length > 1) {
+    timed.sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+    layerGroup.addLayer(
+      L.polyline(
+        timed.map((t) => t.latlng),
+        {
+          color: "#8b5cf6",
+          weight: 2.5,
+          opacity: 0.75,
+          dashArray: "6 8",
+        }
+      )
+    );
   }
   if (bounds.length) {
     map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 });
@@ -648,9 +729,49 @@ async function createCase() {
   }
 }
 
+function updateDropzone() {
+  const dz = el("dropzone");
+  const fileInput = el("file-input");
+  const label = el("dz-file");
+  const hasFile = fileInput.files.length > 0;
+  dz.classList.toggle("has-file", hasFile);
+  label.textContent = hasFile ? "▸ " + fileInput.files[0].name : "";
+}
+
+function wireDropzone() {
+  const dz = el("dropzone");
+  const fileInput = el("file-input");
+  ["dragenter", "dragover"].forEach((name) =>
+    dz.addEventListener(name, (event) => {
+      event.preventDefault();
+      dz.classList.add("dragover");
+    })
+  );
+  ["dragleave", "drop"].forEach((name) =>
+    dz.addEventListener(name, (event) => {
+      event.preventDefault();
+      dz.classList.remove("dragover");
+    })
+  );
+  dz.addEventListener("drop", (event) => {
+    if (!event.dataTransfer || !event.dataTransfer.files.length) return;
+    fileInput.files = event.dataTransfer.files;
+    updateDropzone();
+    detectColumns();
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  initTheme();
+  el("theme-toggle").addEventListener("click", () =>
+    applyTheme(currentTheme() === "light" ? "dark" : "light")
+  );
   el("upload-form").addEventListener("submit", handleSubmit);
-  el("file-input").addEventListener("change", detectColumns);
+  el("file-input").addEventListener("change", () => {
+    updateDropzone();
+    detectColumns();
+  });
+  wireDropzone();
   el("new-case-btn").addEventListener("click", createCase);
   el("training-btn").addEventListener("click", startTraining);
   wireDownloads();

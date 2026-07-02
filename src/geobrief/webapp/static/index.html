@@ -4,6 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>GeoBrief LE — Location Evidence Processor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap"
+  />
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -11,26 +17,50 @@
     crossorigin=""
   />
   <link rel="stylesheet" href="/static/style.css" />
+  <script>
+    // Apply the saved theme before first paint to avoid a flash.
+    try {
+      if (localStorage.getItem("geobrief-theme") === "light") {
+        document.documentElement.dataset.theme = "light";
+      }
+    } catch (e) {}
+  </script>
 </head>
 <body>
+  <div class="bg-aurora" aria-hidden="true"></div>
+  <div class="bg-grid" aria-hidden="true"></div>
+
   <header>
-    <h1>GeoBrief LE</h1>
-    <p class="tagline">Turn location records into maps, timelines, and reports.</p>
+    <div class="brand">
+      <div class="logo-mark" aria-hidden="true"></div>
+      <div class="brand-text">
+        <h1>GeoBrief LE</h1>
+        <p class="tagline">Turn location records into maps, timelines, and reports.</p>
+      </div>
+    </div>
+    <div class="header-tools">
+      <span class="pill"><span class="dot" aria-hidden="true"></span>Local-first</span>
+      <button type="button" id="theme-toggle" title="Switch light/dark mode"
+              aria-label="Switch light/dark mode">☾</button>
+    </div>
   </header>
 
   <main>
     <section class="card" id="upload-card">
-      <h2>Step 1 &mdash; Upload your file</h2>
+      <h2><span class="step-badge">1</span>Upload your file</h2>
       <p class="hint">
         Choose a spreadsheet of location records (CSV or Excel). Your file stays
         on this computer. The software does the hard part.
       </p>
 
       <form id="upload-form">
-        <label class="field">
-          <span>Location records file</span>
+        <label class="dropzone" id="dropzone" for="file-input">
           <input type="file" id="file-input" name="file"
                  accept=".csv,.xlsx,.xls" required />
+          <span class="dz-icon" aria-hidden="true">⊕</span>
+          <span class="dz-title">Drop your file here or click to browse</span>
+          <span class="dz-sub">CSV, XLSX, or XLS · processed locally, never uploaded</span>
+          <span class="dz-file" id="dz-file"></span>
         </label>
 
         <label class="field">
@@ -51,7 +81,7 @@
         </div>
 
         <fieldset id="mapping-fieldset" class="hidden">
-          <legend>Step 2 &mdash; Confirm detected columns</legend>
+          <legend>Step 2 — Confirm detected columns</legend>
           <p class="hint" id="mapping-hint">
             We looked at your file and guessed these columns. Fix any that
             are wrong, then continue.
@@ -75,7 +105,7 @@
         </fieldset>
 
         <label class="field">
-          <span>Step 3 &mdash; Show times in</span>
+          <span>Step 3 — Show times in</span>
           <select id="tz-select" name="display_timezone">
             <option value="UTC" selected>UTC (original)</option>
             <option value="America/New_York">Eastern Time</option>
@@ -110,7 +140,7 @@
       <div class="training-banner hidden" id="training-banner">
         TRAINING MODE — practice data, not real evidence.
       </div>
-      <h2>Step 4 &mdash; Review what we found</h2>
+      <h2><span class="step-badge">4</span>Review what we found</h2>
       <p id="plain-summary" class="plain-summary"></p>
 
       <div class="stat-grid" id="stat-grid"></div>
@@ -120,7 +150,7 @@
         <ul id="warning-list"></ul>
       </div>
 
-      <h2>Step 5 &mdash; Your map</h2>
+      <h2><span class="step-badge">5</span>Your map</h2>
       <div class="time-filter" id="time-filter">
         <label class="field">
           <span>From</span>
@@ -138,9 +168,11 @@
         </button>
       </div>
       <p class="hint" id="filter-note"></p>
-      <div id="map"></div>
+      <div class="map-frame">
+        <div id="map"></div>
+      </div>
 
-      <h2>Step 6 &mdash; Download your outputs</h2>
+      <h2><span class="step-badge">6</span>Download your outputs</h2>
       <div class="downloads">
         <button id="dl-csv" class="secondary">Cleaned spreadsheet (CSV)</button>
         <button id="dl-json" class="secondary">Processing report (JSON)</button>
@@ -149,7 +181,7 @@
         <button id="dl-pdf" class="secondary">Processing report (PDF)</button>
       </div>
 
-      <h2>Step 7 &mdash; Ask the assistant</h2>
+      <h2><span class="step-badge">7</span>Ask the assistant</h2>
       <div class="upsell hidden" id="assistant-upsell">
         <p id="assistant-upsell-text"></p>
         <a href="#pricing-card" class="upsell-cta" id="assistant-upsell-cta">
