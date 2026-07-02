@@ -6,8 +6,9 @@ Usage:
     python -m geobrief serve [--host 127.0.0.1] [--port 8000]
 
 The ``process`` command reads a file, hashes it, cleans and validates the
-records, and writes a cleaned CSV, a JSON summary, and map-ready GeoJSON to
-an output directory. The ``ask`` command answers a plain-English question
+records, and writes a cleaned CSV, a JSON summary, map-ready GeoJSON, and a
+Google Earth KML file to an output directory. The ``ask`` command answers a
+plain-English question
 about the data using the investigator AI assistant. The original file is
 never modified.
 """
@@ -40,6 +41,8 @@ def _cmd_process(args: argparse.Namespace) -> int:
     cleaned_path = out_dir / f"{stem}_cleaned.csv"
     summary_path = out_dir / f"{stem}_summary.json"
     geojson_path = out_dir / f"{stem}_points.geojson"
+    kml_path = out_dir / f"{stem}.kml"
+    report_path = out_dir / f"{stem}_report.pdf"
 
     cleaned_path.write_text(result.cleaned_csv(), encoding="utf-8")
     summary_path.write_text(result.summary_json(), encoding="utf-8")
@@ -48,12 +51,30 @@ def _cmd_process(args: argparse.Namespace) -> int:
     geojson_path.write_text(
         json.dumps(result.geojson(), indent=2), encoding="utf-8"
     )
+    from .kml import build_kml
+
+    kml_path.write_text(build_kml(result), encoding="utf-8")
+    from .report import build_pdf_report
+
+    report_path.write_bytes(
+        build_pdf_report(
+            result,
+            exports=[
+                cleaned_path.name,
+                summary_path.name,
+                geojson_path.name,
+                kml_path.name,
+            ],
+        )
+    )
 
     print(result.summary()["plain_english"])
     print(f"SHA-256: {result.sha256}")
     print(f"Cleaned spreadsheet: {cleaned_path}")
     print(f"Processing summary:  {summary_path}")
     print(f"Map points (GeoJSON): {geojson_path}")
+    print(f"Google Earth file:   {kml_path}")
+    print(f"PDF report:          {report_path}")
     return 0
 
 

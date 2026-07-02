@@ -7,6 +7,7 @@ default. No data leaves the machine.
 
 from __future__ import annotations
 
+import base64
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
@@ -17,7 +18,9 @@ from pydantic import BaseModel
 from ..assistant import Assistant, AssistantConfig
 from ..billing import BillingError, BillingService, effective_plan
 from ..ingest import UnsupportedFileTypeError
+from ..kml import build_kml
 from ..pipeline import __version__, process_bytes
+from ..report import build_pdf_report
 from ..subscription import (
     Feature,
     PLANS,
@@ -152,12 +155,23 @@ async def process(
             status_code=400, detail=f"Could not read file: {exc}"
         ) from exc
 
+    stem = Path(file.filename or "upload").stem
+    export_names = [
+        f"{stem}_cleaned.csv",
+        f"{stem}_summary.json",
+        f"{stem}_points.geojson",
+        f"{stem}.kml",
+    ]
     return JSONResponse(
         {
             "summary": result.summary(),
             "geojson": result.geojson(),
             "cleaned_csv": result.cleaned_csv(),
             "summary_json": result.summary_json(),
+            "kml": build_kml(result),
+            "report_pdf_base64": base64.b64encode(
+                build_pdf_report(result, exports=export_names)
+            ).decode("ascii"),
         }
     )
 

@@ -118,6 +118,10 @@ def _datetime_fraction(series: pd.Series, sample: int = 50) -> float:
             if re.fullmatch(r"-?\d{9,13}", text):
                 ok += 1
                 continue
+            # Other plain numbers (e.g. "10.0") are not dates, even though
+            # dateutil would happily parse them as a day of the month.
+            if re.fullmatch(r"-?\d+(\.\d+)?", text):
+                continue
             date_parser.parse(text)
             ok += 1
         except (ValueError, OverflowError, TypeError):
@@ -195,9 +199,18 @@ def detect_columns(df: pd.DataFrame) -> DetectionResult:
             "the correct columns."
         )
 
-    time_col, time_h, time_c = _best_column(df, _TIME_HINTS, _datetime_fraction)
+    # Columns already claimed for coordinates must not double as the
+    # timestamp or accuracy column.
+    coord_cols = {c for c in (lat_col, lon_col) if c is not None}
+    time_col, time_h, time_c = _best_column(
+        df, _TIME_HINTS, _datetime_fraction, exclude=coord_cols
+    )
+    acc_exclude = coord_cols | ({time_col} if time_col else set())
     acc_col, acc_h, acc_c = _best_column(
-        df, _ACC_HINTS, lambda s: _numeric_fraction(s, 0, 1_000_000)
+        df,
+        _ACC_HINTS,
+        lambda s: _numeric_fraction(s, 0, 1_000_000),
+        exclude=acc_exclude,
     )
 
     confidence["latitude"] = (

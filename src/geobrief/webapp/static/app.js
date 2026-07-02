@@ -118,6 +118,15 @@ function renderMap(geojson) {
 
 function download(filename, text, mime) {
   const blob = new Blob([text], { type: mime });
+  triggerBlobDownload(filename, blob);
+}
+
+function downloadBase64(filename, base64Data, mime) {
+  const bytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+  triggerBlobDownload(filename, new Blob([bytes], { type: mime }));
+}
+
+function triggerBlobDownload(filename, blob) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -191,6 +200,22 @@ function wireDownloads() {
       baseName() + "_points.geojson",
       JSON.stringify(lastResult.geojson, null, 2),
       "application/geo+json"
+    );
+  });
+  el("dl-kml").addEventListener("click", () => {
+    if (!lastResult) return;
+    download(
+      baseName() + ".kml",
+      lastResult.kml,
+      "application/vnd.google-earth.kml+xml"
+    );
+  });
+  el("dl-pdf").addEventListener("click", () => {
+    if (!lastResult) return;
+    downloadBase64(
+      baseName() + "_report.pdf",
+      lastResult.report_pdf_base64,
+      "application/pdf"
     );
   });
 }
