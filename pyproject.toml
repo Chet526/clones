@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "geobrief"
-version = "0.1.0"
-description = "GeoBrief LE — local-first investigator location evidence processor (Phase 1 prototype)"
+version = "0.2.0"
+description = "GeoBrief LE — local-first investigator location evidence processor"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

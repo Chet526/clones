@@ -11,7 +11,7 @@ import base64
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -19,7 +19,7 @@ from ..assistant import Assistant, AssistantConfig
 from ..billing import BillingError, BillingService, effective_plan
 from ..detection import detect_columns
 from ..ingest import UnsupportedFileTypeError, read_dataframe_from_bytes
-from ..kml import build_kml
+from ..kml import build_kml, build_kmz
 from ..models import ColumnMapping
 from ..pipeline import __version__, process_bytes
 from ..report import build_pdf_report
@@ -44,6 +44,13 @@ app = FastAPI(
 def index() -> HTMLResponse:
     index_path = STATIC_DIR / "index.html"
     return HTMLResponse(index_path.read_text(encoding="utf-8"))
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon() -> FileResponse:
+    return FileResponse(
+        STATIC_DIR / "favicon.svg", media_type="image/svg+xml"
+    )
 
 
 @app.get("/api/health")
@@ -338,6 +345,9 @@ async def process(
             "cleaned_csv": result.cleaned_csv(),
             "summary_json": result.summary_json(),
             "kml": build_kml(result),
+            "kmz_base64": base64.b64encode(build_kmz(result)).decode(
+                "ascii"
+            ),
             "report_pdf_base64": base64.b64encode(
                 build_pdf_report(result, exports=export_names)
             ).decode("ascii"),

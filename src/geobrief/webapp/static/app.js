@@ -464,6 +464,14 @@ function wireDownloads() {
       "application/vnd.google-earth.kml+xml"
     );
   });
+  el("dl-kmz").addEventListener("click", () => {
+    if (!lastResult) return;
+    downloadBase64(
+      baseName() + ".kmz",
+      lastResult.kmz_base64,
+      "application/vnd.google-earth.kmz"
+    );
+  });
   el("dl-pdf").addEventListener("click", () => {
     if (!lastResult) return;
     downloadBase64(

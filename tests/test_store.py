@@ -180,5 +180,5 @@ def test_cli_process_with_case(tmp_path, capsys):
     with CaseStore() as store:
         files = store.list_source_files(1)
         assert [f["original_filename"] for f in files] == ["trip.csv"]
-        assert len(store.list_exports(1)) == 5
+        assert len(store.list_exports(1)) == 6
         assert store.verify_audit_chain(1) is True

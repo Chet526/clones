@@ -30,6 +30,12 @@ def test_index_served():
     assert "GeoBrief LE" in response.text
 
 
+def test_favicon_served():
+    response = client.get("/favicon.ico")
+    assert response.status_code == 200
+    assert "svg" in response.headers["content-type"]
+
+
 def test_process_endpoint():
     csv = (
         "latitude,longitude,timestamp,accuracy_m\n"
@@ -48,6 +54,9 @@ def test_process_endpoint():
     assert body["summary"]["record_counts"]["mappable"] == 1
     assert len(body["geojson"]["features"]) == 1
     assert "validation_status" in body["cleaned_csv"]
+    assert body["kml"].startswith("<?xml")
+    assert body["kmz_base64"]
+    assert body["report_pdf_base64"]
 
 
 def test_unsupported_file_type_rejected():

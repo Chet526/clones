@@ -57,9 +57,11 @@ def _cmd_process(args: argparse.Namespace) -> int:
     geojson_path.write_text(
         json.dumps(result.geojson(), indent=2), encoding="utf-8"
     )
-    from .kml import build_kml
+    from .kml import build_kml, build_kmz
 
     kml_path.write_text(build_kml(result), encoding="utf-8")
+    kmz_path = out_dir / f"{stem}.kmz"
+    kmz_path.write_bytes(build_kmz(result))
     from .report import build_pdf_report
 
     report_path.write_bytes(
@@ -96,6 +98,7 @@ def _cmd_process(args: argparse.Namespace) -> int:
                 ("summary_json", summary_path),
                 ("geojson", geojson_path),
                 ("kml", kml_path),
+                ("kmz", kmz_path),
                 ("pdf_report", report_path),
             ):
                 store.record_export(args.case, export_type, path.name)
@@ -107,6 +110,7 @@ def _cmd_process(args: argparse.Namespace) -> int:
     print(f"Processing summary:  {summary_path}")
     print(f"Map points (GeoJSON): {geojson_path}")
     print(f"Google Earth file:   {kml_path}")
+    print(f"Google Earth (KMZ):  {kmz_path}")
     print(f"PDF report:          {report_path}")
     return 0
 
