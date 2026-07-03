@@ -8,6 +8,11 @@ __pycache__/
 venv/
 env/
 
+# Secrets — never commit real environment files
+.env
+.env.*
+!.env.example
+
 # Local case data / working outputs (never commit case evidence)
 /var/
 /data/cases/
@@ -18,3 +23,6 @@ env/
 .DS_Store
 .idea/
 .vscode/
+
+# Local Netlify folder
+.netlify

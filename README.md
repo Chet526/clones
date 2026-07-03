@@ -49,6 +49,16 @@ source .venv/bin/activate
 pip install -e .            # or: pip install -r requirements.txt
 ```
 
+### Or run with Docker
+
+```bash
+cp .env.example .env        # fill in what you need (all values optional)
+docker compose up --build   # serves http://localhost:8000, data on a volume
+```
+
+All configuration is by environment variable — see [.env.example](.env.example)
+for the complete annotated list. Never commit a real `.env`.
+
 ## Use it — web app (guided wizard)
 
 ```bash
@@ -128,6 +138,10 @@ needed):
 | `OPENROUTER_BASE_URL` | API base URL | `https://openrouter.ai/api/v1` |
 | `GEOBRIEF_ASSISTANT_ENABLED` | Force the hosted model on/off | follows key |
 
+For the most capable assistant we recommend setting
+`OPENROUTER_MODEL=anthropic/claude-sonnet-4` (strong reasoning at a moderate
+price); the default `openrouter/auto` lets OpenRouter route each request.
+
 When a key is set, only an **aggregate** analysis context (counts, time range,
 missing fields, a movement summary, and a small sample of points) is sent —
 never the full record set. Every answer carries the notice: *"Draft language
@@ -155,6 +169,50 @@ The web app shows both plans (Step "Plans & pricing"), marks the active plan,
 and exposes them at `GET /api/plans`. When the assistant is requested on the
 Standard plan, `GET /api/assistant/status` and `POST /api/assistant` return
 `402 Payment Required` with an upgrade prompt.
+
+### License keys (offline unlock)
+
+Customers who buy on the storefront receive a **signed license key** that
+unlocks their plan offline — no account, no phone-home:
+
+```bash
+export GEOBRIEF_LICENSE_KEY="GBLE...."        # from the post-checkout page
+export GEOBRIEF_LICENSE_SECRET="<product signing secret>"
+python -m geobrief serve
+```
+
+Keys are `GBLE.<payload>.<signature>` — a URL-safe base64 JSON payload
+(`plan`, optional `email`, optional `exp` unix expiry) signed with
+HMAC-SHA256 over the encoded payload. Verification lives in
+[`geobrief/licensing.py`](src/geobrief/licensing.py); the storefront issues
+keys with the identical scheme from a Netlify Function. Entitlement
+resolution order: active Stripe subscription → valid license key →
+`GEOBRIEF_PLAN`.
+
+### Storefront (Netlify)
+
+Netlify hosts the marketing site + checkout only — the product itself runs on
+the customer's machine. The site lives in [site/public](site/public) with two
+serverless functions in [site/functions](site/functions):
+
+* `create-checkout` — creates the Stripe Checkout Session for a plan.
+* `get-license` — exchanges a paid checkout session for a signed license key
+  whose expiry tracks the subscription's billing period (+7 days grace).
+
+Deploy:
+
+```bash
+netlify login
+netlify init                          # link/create the site
+netlify env:set STRIPE_SECRET_KEY sk_test_...
+netlify env:set STRIPE_PRICE_STANDARD price_...
+netlify env:set STRIPE_PRICE_PRO price_...
+netlify env:set GEOBRIEF_LICENSE_SECRET "$(openssl rand -hex 32)"
+netlify deploy --prod
+```
+
+In Stripe (test mode first): create two Products with recurring monthly
+Prices ($9.99 / $14.99) and put their `price_...` ids in the env vars above.
 
 ### Real billing (Stripe)
 

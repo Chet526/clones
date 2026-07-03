@@ -452,18 +452,22 @@ class BillingService:
 def effective_plan(env: Optional[dict] = None) -> Plan:
     """Return the plan the app should enforce right now.
 
-    Prefers a real active Stripe subscription; when there is none (or billing
-    is not configured), falls back to the ``GEOBRIEF_PLAN`` env selection used
-    for local development and self-hosting.
+    Resolution order: a real active Stripe subscription, then a valid offline
+    license key (``GEOBRIEF_LICENSE_KEY``), then the ``GEOBRIEF_PLAN`` env
+    selection used for local development and self-hosting.
     """
     # Imported lazily to keep the module import graph shallow and avoid any
     # import-time coupling with the web layer.
+    from .licensing import licensed_plan
     from .subscription import current_plan
 
     service = BillingService.from_env(env)
     plan_id = service.active_plan_id()
     if plan_id:
         return get_plan(plan_id)
+    licensed = licensed_plan(env)
+    if licensed is not None:
+        return licensed
     return current_plan(env)
 
 

@@ -1,0 +1,14 @@
+# GeoBrief LE storefront — static marketing site + Stripe checkout functions.
+# The FastAPI product itself is NOT hosted on Netlify; it is installed locally
+# (or self-hosted via Docker). This site sells and delivers license keys.
+
+[build]
+  publish = "site/public"
+
+[functions]
+  directory = "site/functions"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200

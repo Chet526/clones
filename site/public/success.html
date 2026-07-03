@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thank you — GeoBrief LE</title>
+  <meta name="robots" content="noindex" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <span class="brand">✦ GeoBrief <span class="brand-le">LE</span></span>
+      <nav><a href="/">Home</a></nav>
+    </div>
+  </header>
+
+  <main class="wrap success">
+    <h1>Thank you for subscribing!</h1>
+    <p id="status" class="lede">Fetching your license key…</p>
+
+    <div id="license-box" class="license-box" hidden>
+      <h2>Your license key</h2>
+      <pre id="license-key" class="license-key"></pre>
+      <button class="btn primary" id="copy">Copy key</button>
+      <h2>Unlock GeoBrief LE</h2>
+      <pre><code>export GEOBRIEF_LICENSE_KEY="&lt;your key&gt;"
+python -m geobrief serve</code></pre>
+      <p class="fine">
+        Keep this key private — it unlocks your paid plan. It renews with your
+        subscription; revisit this page (bookmark it) after each billing cycle
+        to fetch a refreshed key, or find it in your receipt email.
+      </p>
+    </div>
+  </main>
+
+  <script>
+    (async () => {
+      const status = document.getElementById("status");
+      const sessionId = new URLSearchParams(location.search).get("session_id");
+      if (!sessionId) {
+        status.textContent = "Missing checkout session. Use the link from your receipt email.";
+        return;
+      }
+      try {
+        const response = await fetch(
+          "/api/get-license?session_id=" + encodeURIComponent(sessionId)
+        );
+        const body = await response.json();
+        if (!response.ok) {
+          status.textContent = body.error || "Could not retrieve your license key.";
+          return;
+        }
+        status.textContent =
+          "Your " + body.plan.toUpperCase() + " plan is active" +
+          (body.email ? " for " + body.email : "") + ".";
+        document.getElementById("license-key").textContent = body.license_key;
+        document.getElementById("license-box").hidden = false;
+        document.getElementById("copy").addEventListener("click", () => {
+          navigator.clipboard.writeText(body.license_key);
+        });
+      } catch {
+        status.textContent = "Could not retrieve your license key. Refresh to retry.";
+      }
+    })();
+  </script>
+</body>
+</html>

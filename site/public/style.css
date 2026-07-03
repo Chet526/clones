@@ -1,0 +1,135 @@
+/* GeoBrief LE storefront — aurora/glass theme matching the product UI. */
+:root {
+  --bg: #0b1020;
+  --bg-soft: #121a33;
+  --card: rgba(255, 255, 255, 0.05);
+  --border: rgba(255, 255, 255, 0.12);
+  --text: #e8ecf8;
+  --muted: #9aa5c4;
+  --accent: #6ea8ff;
+  --accent2: #8f7bff;
+  --radius: 14px;
+}
+* { box-sizing: border-box; margin: 0; }
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background:
+    radial-gradient(1100px 500px at 80% -10%, rgba(110, 168, 255, 0.18), transparent 60%),
+    radial-gradient(900px 500px at 10% 10%, rgba(143, 123, 255, 0.15), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 1.25rem; }
+a { color: var(--accent); text-decoration: none; }
+
+/* Nav */
+.nav {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(11, 16, 32, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 1.25rem; }
+.brand { font-weight: 700; font-size: 1.15rem; letter-spacing: 0.02em; }
+.brand-le { color: var(--accent); }
+.nav nav a { margin-left: 1.4rem; color: var(--muted); font-size: 0.95rem; }
+.nav nav a:hover { color: var(--text); }
+
+/* Hero */
+.hero { padding: 6rem 0 4.5rem; text-align: center; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.15; }
+.grad {
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.lede { max-width: 46rem; margin: 1.4rem auto 0; color: var(--muted); font-size: 1.1rem; }
+.lede strong { color: var(--text); }
+.lede-sm { color: var(--muted); }
+.cta-row { margin-top: 2.2rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-block; padding: 0.75rem 1.6rem; border-radius: 999px;
+  font-weight: 600; font-size: 1rem; cursor: pointer; border: 1px solid transparent;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn.primary {
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  color: #0b1020;
+}
+.btn.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(110, 168, 255, 0.35); }
+.btn.ghost { border-color: var(--border); color: var(--text); background: transparent; }
+.btn.ghost:hover { background: var(--card); }
+.btn:disabled { opacity: 0.6; cursor: wait; }
+.fine { color: var(--muted); font-size: 0.85rem; margin-top: 1.4rem; }
+.center { text-align: center; }
+
+/* Sections */
+section { padding: 3.5rem 0; }
+h2 { font-size: 1.9rem; margin-bottom: 1.6rem; text-align: center; }
+
+/* Feature grid */
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem; }
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.4rem;
+}
+.card h3 { margin-bottom: 0.5rem; font-size: 1.1rem; }
+.card p { color: var(--muted); font-size: 0.95rem; }
+.tag {
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  color: #0b1020; border-radius: 999px; padding: 0.05rem 0.6rem;
+  font-size: 0.75rem; font-weight: 700; vertical-align: middle;
+}
+
+/* Pricing */
+.pricing { background: var(--bg-soft); border-block: 1px solid var(--border); }
+.plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.4rem; max-width: 760px; margin: 2rem auto 0; }
+.plan {
+  position: relative; background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.8rem; display: flex; flex-direction: column;
+}
+.plan.featured { border-color: var(--accent); box-shadow: 0 0 40px rgba(110, 168, 255, 0.15); }
+.ribbon {
+  position: absolute; top: -0.8rem; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  color: #0b1020; font-size: 0.75rem; font-weight: 700;
+  padding: 0.15rem 0.9rem; border-radius: 999px;
+}
+.plan h3 { font-size: 1.2rem; }
+.price { font-size: 2.3rem; font-weight: 700; margin: 0.4rem 0 1rem; }
+.price span { font-size: 1rem; font-weight: 400; color: var(--muted); }
+.plan ul { list-style: none; padding: 0; margin: 0 0 1.6rem; flex: 1; }
+.plan li { padding: 0.35rem 0 0.35rem 1.5rem; position: relative; color: var(--muted); font-size: 0.95rem; }
+.plan li::before { content: "✓"; position: absolute; left: 0; color: var(--accent); }
+.plan li strong { color: var(--text); }
+
+/* Install steps */
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.2rem; }
+.step h3 { margin-bottom: 0.6rem; font-size: 1rem; color: var(--muted); }
+pre {
+  background: #0a0e1c; border: 1px solid var(--border); border-radius: 10px;
+  padding: 1rem; overflow-x: auto; font-size: 0.85rem; color: #c9d6f2;
+}
+
+/* FAQ */
+details { border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem 1.2rem; margin-bottom: 0.8rem; background: var(--card); }
+summary { cursor: pointer; font-weight: 600; }
+details p { margin-top: 0.7rem; color: var(--muted); font-size: 0.95rem; }
+
+/* Success page */
+.success { padding: 4rem 1.25rem; max-width: 720px; }
+.success h1 { font-size: 2rem; }
+.license-box { margin-top: 2rem; }
+.license-box h2 { text-align: left; font-size: 1.2rem; margin: 1.6rem 0 0.6rem; }
+.license-key { word-break: break-all; white-space: pre-wrap; }
+
+/* Legal pages */
+.legal { max-width: 720px; padding: 3rem 1.25rem; }
+.legal h1 { margin-bottom: 1rem; }
+.legal h2 { text-align: left; font-size: 1.15rem; margin: 1.6rem 0 0.5rem; }
+.legal p, .legal li { color: var(--muted); font-size: 0.95rem; }
+
+/* Footer */
+footer { border-top: 1px solid var(--border); margin-top: 3rem; }
+.footer-inner { display: flex; justify-content: space-between; padding: 1.4rem 1.25rem; color: var(--muted); font-size: 0.9rem; }
+.footer-inner nav a { margin-left: 1.2rem; color: var(--muted); }
