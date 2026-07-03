@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Account — GeoBrief LE</title>
+  <meta name="robots" content="noindex" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <span class="brand">✦ GeoBrief <span class="brand-le">LE</span></span>
+      <nav>
+        <a href="/">Home</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap account-page">
+    <h1>Account</h1>
+    <p class="lede" id="status">Loading account services…</p>
+
+    <section class="account-card" id="auth-card" hidden>
+      <h2>Sign in</h2>
+      <p class="fine">Use your checkout email. We send a secure magic link.</p>
+      <form id="login-form" class="account-form">
+        <input id="email" type="email" required placeholder="you@agency.gov" />
+        <button class="btn primary" type="submit">Send magic link</button>
+      </form>
+      <p class="fine" id="login-status"></p>
+    </section>
+
+    <section class="account-card" id="profile-card" hidden>
+      <h2>Subscription</h2>
+      <div id="profile-body"></div>
+      <div class="cta-row left" id="actions">
+        <button class="btn primary" id="portal-btn">Manage billing</button>
+        <button class="btn ghost" id="signout-btn">Sign out</button>
+      </div>
+      <p class="fine" id="profile-status"></p>
+    </section>
+  </main>
+
+  <script src="account.js"></script>
+</body>
+</html>

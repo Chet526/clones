@@ -201,6 +201,8 @@ serverless functions in [site/functions](site/functions):
     `STRIPE_PRICE_STANDARD` / `_PRO`).
 * `get-license` — exchanges a paid checkout session for a signed license key
   whose expiry tracks the subscription's billing period (+7 days grace).
+* `account-config`, `account-me`, `account-portal` — passwordless account
+  login + subscription lookup + Stripe billing portal for SaaS users.
 
 Deploy:
 
@@ -232,6 +234,29 @@ netlify deploy --prod
 
 In Stripe (test mode first): create two Products with recurring monthly Prices
 ($9.99 / $14.99) dedicated to GeoBrief.
+
+### SaaS accounts and login
+
+If you want customer accounts, enable `/account.html` with Supabase Auth
+(passwordless magic links):
+
+```bash
+netlify env:set SUPABASE_URL https://<project>.supabase.co
+netlify env:set SUPABASE_ANON_KEY <anon-public-key>
+netlify env:set STRIPE_BILLING_PORTAL_RETURN_URL https://geobrief-le.netlify.app/account.html
+netlify deploy --prod
+```
+
+How account management works:
+
+* User signs in on `/account.html` with email magic link.
+* Backend verifies the Supabase access token.
+* Backend finds Stripe customer by signed-in email.
+* Backend opens Stripe Billing Portal for upgrades/cancellations/payment updates.
+
+This gives you SaaS-style account access **without building a custom account DB
+first**. A custom database becomes necessary only when you need team workspaces,
+RBAC, internal analytics, or app-owned profile/settings data.
 
 ### Real billing (Stripe)
 

@@ -123,6 +123,29 @@ details p { margin-top: 0.7rem; color: var(--muted); font-size: 0.95rem; }
 .license-box h2 { text-align: left; font-size: 1.2rem; margin: 1.6rem 0 0.6rem; }
 .license-key { word-break: break-all; white-space: pre-wrap; }
 
+/* Account page */
+.account-page { max-width: 760px; padding: 3rem 1.25rem; }
+.account-page h1 { margin-bottom: 0.75rem; }
+.account-card {
+  margin-top: 1rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+.account-card h2 { text-align: left; font-size: 1.2rem; margin-bottom: 0.4rem; }
+.account-form { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-top: 0.9rem; }
+.account-form input {
+  flex: 1;
+  min-width: 230px;
+  background: #0a0e1c;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  padding: 0.7rem 1rem;
+}
+.cta-row.left { justify-content: flex-start; }
+
 /* Legal pages */
 .legal { max-width: 720px; padding: 3rem 1.25rem; }
 .legal h1 { margin-bottom: 1rem; }
