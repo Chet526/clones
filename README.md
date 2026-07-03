@@ -195,7 +195,10 @@ Netlify hosts the marketing site + checkout only — the product itself runs on
 the customer's machine. The site lives in [site/public](site/public) with two
 serverless functions in [site/functions](site/functions):
 
-* `create-checkout` — creates the Stripe Checkout Session for a plan.
+* `create-checkout` — starts checkout for a plan using either:
+  * preset Stripe Payment Links (`STRIPE_PAYMENT_LINK_STANDARD` / `_PRO`), or
+  * dynamically-created Stripe Checkout Sessions (`STRIPE_SECRET_KEY` +
+    `STRIPE_PRICE_STANDARD` / `_PRO`).
 * `get-license` — exchanges a paid checkout session for a signed license key
   whose expiry tracks the subscription's billing period (+7 days grace).
 
@@ -204,15 +207,31 @@ Deploy:
 ```bash
 netlify login
 netlify init                          # link/create the site
-netlify env:set STRIPE_SECRET_KEY sk_test_...
-netlify env:set STRIPE_PRICE_STANDARD price_...
-netlify env:set STRIPE_PRICE_PRO price_...
 netlify env:set GEOBRIEF_LICENSE_SECRET "$(openssl rand -hex 32)"
 netlify deploy --prod
 ```
 
-In Stripe (test mode first): create two Products with recurring monthly
-Prices ($9.99 / $14.99) and put their `price_...` ids in the env vars above.
+Then choose one checkout mode:
+
+1. Stripe preset Payment Links (fastest to launch; no server-side Checkout Session creation):
+
+```bash
+netlify env:set STRIPE_PAYMENT_LINK_STANDARD https://buy.stripe.com/...
+netlify env:set STRIPE_PAYMENT_LINK_PRO https://buy.stripe.com/...
+netlify deploy --prod
+```
+
+2. Stripe Checkout Sessions (current default backend flow):
+
+```bash
+netlify env:set STRIPE_SECRET_KEY sk_test_...
+netlify env:set STRIPE_PRICE_STANDARD price_...
+netlify env:set STRIPE_PRICE_PRO price_...
+netlify deploy --prod
+```
+
+In Stripe (test mode first): create two Products with recurring monthly Prices
+($9.99 / $14.99) dedicated to GeoBrief.
 
 ### Real billing (Stripe)
 

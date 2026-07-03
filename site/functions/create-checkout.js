@@ -8,13 +8,14 @@ const PLAN_PRICE_ENV = {
   pro: "STRIPE_PRICE_PRO",
 };
 
+const PLAN_LINK_ENV = {
+  standard: "STRIPE_PAYMENT_LINK_STANDARD",
+  pro: "STRIPE_PAYMENT_LINK_PRO",
+};
+
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return json(405, { error: "Method not allowed" });
-  }
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) {
-    return json(503, { error: "Billing is not configured yet." });
   }
 
   let plan;
@@ -23,6 +24,20 @@ exports.handler = async (event) => {
   } catch {
     return json(400, { error: "Invalid JSON body." });
   }
+  const paymentLinkEnv = PLAN_LINK_ENV[plan];
+  const paymentLink = paymentLinkEnv && process.env[paymentLinkEnv];
+  if (paymentLink) {
+    return json(200, { url: paymentLink, mode: "payment_link" });
+  }
+
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    return json(503, {
+      error:
+        "Billing is not configured yet (missing STRIPE_SECRET_KEY or payment link env vars).",
+    });
+  }
+
   const priceEnv = PLAN_PRICE_ENV[plan];
   const priceId = priceEnv && process.env[priceEnv];
   if (!priceId) {
@@ -53,7 +68,7 @@ exports.handler = async (event) => {
     console.error("Stripe checkout error:", session.error?.message);
     return json(502, { error: "Could not start checkout. Try again shortly." });
   }
-  return json(200, { url: session.url });
+  return json(200, { url: session.url, mode: "checkout_session" });
 };
 
 function json(statusCode, body) {
