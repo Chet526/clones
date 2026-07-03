@@ -11,6 +11,7 @@ metadata:
 allowed-tools:
   - Bash(stripe directory *)
 
+user-invocable: false
 ---
 
 ## Stripe Directory Search

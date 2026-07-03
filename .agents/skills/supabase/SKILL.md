@@ -4,6 +4,7 @@ description: "Use when doing ANY task involving Supabase. Triggers: Supabase pro
 metadata:
   author: supabase
   version: "0.1.2"
+user-invocable: false
 ---
 
 # Supabase

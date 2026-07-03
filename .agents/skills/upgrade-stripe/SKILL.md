@@ -2,6 +2,7 @@
 name: upgrade-stripe
 description: Guide for upgrading Stripe API versions and SDKs
 
+user-invocable: false
 ---
 
 The latest Stripe API version is 2026-06-24.dahlia - use this version when upgrading unless the user specifies a different target version.

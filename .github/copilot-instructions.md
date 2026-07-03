@@ -17,8 +17,11 @@ GeoBrief assists law-enforcement investigators with forensic location and teleco
 - Prefer CLI-first implementation and verification.
 - Validate changes with concrete endpoint/command checks when possible.
 - Keep summaries neutral and court-safe for law-enforcement use.
+- Do not ask users to choose an agent mode or run slash commands when the task can be completed directly.
+- Auto-select and invoke the most relevant skills/agents as needed.
 
 ## Skill and Agent Usage
 - Use the forensic-law-enforcement-data skill for investigative record analysis tasks.
 - Use the saas-auth-billing-ops skill for account, reset, login, and checkout tasks.
 - Use the Forensic Investigator and Account and Billing Ops custom agents when the request aligns with their scope.
+- Keep these capabilities hidden from manual selection but available for model-driven invocation.

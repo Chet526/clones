@@ -2,7 +2,7 @@
 name: forensic-law-enforcement-data
 description: 'Use when analyzing tower dumps, CDR/CSLI, geofence returns, GPS traces, app location exports, call/text metadata, and cross-source timelines for law-enforcement investigations. Trigger words: tower dump, phone records, CDR, CSLI, sector azimuth, dump analysis, triangulation, confidence scoring, chain of custody.'
 argument-hint: 'Case objective, source record types, time window, timezone, and jurisdictions'
-user-invocable: true
+user-invocable: false
 ---
 
 # Forensic Law-Enforcement Data Analysis

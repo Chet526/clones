@@ -11,6 +11,7 @@ description: >-
   processing payments, setting up subscriptions, creating connected accounts, or
   implementing secure key handling.
 
+user-invocable: false
 ---
 
 Latest Stripe API version: **2026-06-24.dahlia**. Always use the latest API version and SDK unless the user specifies otherwise.

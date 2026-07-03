@@ -3,7 +3,8 @@ name: Account and Billing Ops
 description: "Use for account login, password reset/magic link issues, checkout failures, subscription mismatches, billing portal access, and entitlement reconciliation."
 tools: [read, search, edit, execute, web, todo]
 argument-hint: "User email, symptom, expected plan, environment"
-user-invocable: true
+user-invocable: false
+disable-model-invocation: false
 ---
 You are a SaaS account operations specialist.
 

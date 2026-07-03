@@ -21,6 +21,7 @@ allowed-tools:
   - Skill
   - Read
 
+user-invocable: false
 ---
 
 ## Stripe Projects — Service Provisioning

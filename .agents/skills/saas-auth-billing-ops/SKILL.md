@@ -2,7 +2,7 @@
 name: saas-auth-billing-ops
 description: 'Use for SaaS account operations: login failures, password resets, magic links, session issues, checkout failures, subscription mismatches, billing portal access, and entitlement drift between auth and Stripe.'
 argument-hint: 'User email, symptom, environment, and expected plan'
-user-invocable: true
+user-invocable: false
 ---
 
 # SaaS Auth and Billing Operations
