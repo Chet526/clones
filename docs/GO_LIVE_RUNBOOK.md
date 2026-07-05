@@ -55,6 +55,7 @@ Scope note:
 - Run release gates: Python tests, function tests, JS syntax checks, and dependency audit.
 - Build release artifacts with deterministic naming (`geobrief-<version>-<buildid>`).
 - Create an annotated git tag and record the immutable commit SHA.
+- Record the governance snapshot tag for the launch record (`v0.3.0-launch-r1` for this release cycle).
 - Update customer-facing install commands to that commit SHA.
 - Publish release notes and deployment metadata, then archive the runbook checklist evidence.
 - Record deployment-only control evidence in `docs/DEPLOYMENT_EVIDENCE.md`.

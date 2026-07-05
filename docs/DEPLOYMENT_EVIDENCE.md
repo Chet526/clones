@@ -10,7 +10,7 @@ Scope boundary:
 ## Launch Channel
 - Launch channel type: local-first investigator install (not a shared internet-exposed hosted API).
 - Customer install pin: `52b31ec530c2a81c6647da7b5bf7f99cd03a4475`.
-- Release tag: `v0.3.0-launch`.
+- Release governance snapshot tag: `v0.3.0-launch-r1`.
 
 Because the launch channel is local-first, reverse-proxy auth is conditionally required only when an agency exposes `/api/*` to the internet.
 
@@ -32,6 +32,6 @@ curl -i -H "Authorization: Bearer <proxy-issued-token>" https://<host>/api/plans
 ```
 
 ## Sign-Off (internet-exposed deployments only)
-- Deployment owner: _pending_
-- Security reviewer: _pending_
-- Date: _pending_
+- Deployment owner: N/A for current local-first launch profile
+- Security reviewer: N/A for current local-first launch profile
+- Date: N/A for current local-first launch profile

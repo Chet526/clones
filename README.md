@@ -60,7 +60,7 @@ python -m pip install "git+https://github.com/Chet526/clones.git@52b31ec530c2a81
 This pin is an immutable commit SHA for reproducible installs. Update it only
 through the documented release process in
 [`docs/GO_LIVE_RUNBOOK.md`](docs/GO_LIVE_RUNBOOK.md).
-Release provenance for this channel: `v0.3.0-launch -> 52b31ec530c2a81c6647da7b5bf7f99cd03a4475`.
+Release governance snapshot tag: `v0.3.0-launch-r1`.
 
 PyPI publishing is optional and can be added later as a separate release
 channel.

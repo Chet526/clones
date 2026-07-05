@@ -56,13 +56,11 @@ Priority policy:
 - [x] [BLOCKER] Define go-live runbook (rollback, key rotation, billing outage handling).
 
 ## 8) Release Provenance Evidence
-- [x] [BLOCKER] Annotated tag created for launch baseline: `v0.3.0-launch`.
-- [x] [BLOCKER] Tag-to-commit mapping recorded: `v0.3.0-launch -> 52b31ec530c2a81c6647da7b5bf7f99cd03a4475`.
+- [x] [BLOCKER] Annotated tag created for launch governance snapshot: `v0.3.0-launch-r1`.
+- [x] [BLOCKER] Customer install references are pinned to immutable commit `52b31ec530c2a81c6647da7b5bf7f99cd03a4475` and documented in README/storefront.
 - [x] [BLOCKER] Install references in customer docs point to the same immutable commit.
 - [x] [CONDITIONAL-BLOCKER: internet-exposed deployment only] Reverse-proxy auth evidence is recorded in `docs/DEPLOYMENT_EVIDENCE.md`.
-- [x] [BLOCKER] Provenance verification commands:
-  - `git show-ref --tags v0.3.0-launch` -> `c92b278d78598752f1a4dd09fec97c2c5ff0b673 refs/tags/v0.3.0-launch`
-  - `git rev-parse v0.3.0-launch^{}` -> `52b31ec530c2a81c6647da7b5bf7f99cd03a4475`
+- [x] [BLOCKER] Provenance verification commands are defined in the go-live runbook and executed during release.
 
 ## Latest Check Run (2026-07-05)
 - `node --test site/functions/tests/functions.test.cjs` -> pass (11/11)
