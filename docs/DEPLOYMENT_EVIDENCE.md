@@ -10,7 +10,7 @@ Scope boundary:
 ## Launch Channel
 - Launch channel type: local-first investigator install (not a shared internet-exposed hosted API).
 - Customer install pin: `52b31ec530c2a81c6647da7b5bf7f99cd03a4475`.
-- Release governance snapshot tag: `v0.3.0-launch-r1`.
+- Release governance snapshot tag: `v0.3.0-launch-r2`.
 
 Because the launch channel is local-first, reverse-proxy auth is conditionally required only when an agency exposes `/api/*` to the internet.
 

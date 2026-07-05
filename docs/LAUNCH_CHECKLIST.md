@@ -47,7 +47,7 @@ Priority policy:
 - [x] [BLOCKER] Front-end syntax checks pass (web app + storefront scripts, CI-enforced).
 - [x] [BLOCKER] Dependency vulnerability scan (`pip-audit`) passes.
 - [x] [BLOCKER] Add CI job for dependency scan and fail on vulnerabilities.
-- [ ] [BLOCKER] GitHub CI run is green for the launch-governance commit (record run URL/ID).
+- [x] [BLOCKER] GitHub CI run is green for the launch-governance commit (record run URL/ID).
 
 ## 7) Release Operations
 - [x] [BLOCKER] Add repository release trust artifacts:
@@ -57,7 +57,7 @@ Priority policy:
 - [x] [BLOCKER] Define go-live runbook (rollback, key rotation, billing outage handling).
 
 ## 8) Release Provenance Evidence
-- [x] [BLOCKER] Annotated tag created for launch governance snapshot: `v0.3.0-launch-r1`.
+- [x] [BLOCKER] Annotated tag created for launch governance snapshot: `v0.3.0-launch-r2`.
 - [x] [BLOCKER] Customer install references are pinned to immutable commit `52b31ec530c2a81c6647da7b5bf7f99cd03a4475` and documented in README/storefront.
 - [x] [BLOCKER] Install references in customer docs point to the same immutable commit.
 - [x] [CONDITIONAL-BLOCKER: internet-exposed deployment only] Reverse-proxy auth evidence is recorded in `docs/DEPLOYMENT_EVIDENCE.md`.
