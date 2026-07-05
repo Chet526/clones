@@ -2,7 +2,7 @@
 
 ## 1. Pre-Launch Gates
 - Confirm CI green on latest launch-governance commit and record run URL/ID in launch evidence.
-- Supplemental CI runs for post-anchor docs-only commits may be recorded for audit continuity, but are not launch blockers.
+- A representative supplemental CI run for post-anchor docs-only commits may be recorded for audit continuity; it is optional and does not need to match latest HEAD.
 - Confirm docs/LAUNCH_CHECKLIST.md has no unresolved `[BLOCKER]` items.
 - Confirm there are no unresolved `[CONDITIONAL-BLOCKER]` items whose conditions are true for the target deployment.
 - Items marked `[OPTIONAL]` may remain open without blocking launch.
@@ -64,7 +64,7 @@ Scope note:
 Provenance verification commands (record command + output in deployment evidence):
 - `git show-ref --tags <governance_snapshot_tag>`
 - `git rev-parse <governance_snapshot_tag>^{}`
-- `grep -n "<customer_install_pin_sha>" README.md site/public/index.html docs/LAUNCH_CHECKLIST.md`
+- `grep -H "<customer_install_pin_sha>" README.md site/public/index.html docs/LAUNCH_CHECKLIST.md`
 - `gh api repos/<owner>/<repo>/actions/runs/<run_id> --jq '{run_id: .id, run_number: .run_number, workflow: .name, head_sha: .head_sha, status: .status, conclusion: .conclusion, html_url: .html_url, run_started_at: .run_started_at, updated_at: .updated_at}'`
 
 ## 8. Post-Launch

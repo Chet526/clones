@@ -15,7 +15,7 @@ Scope boundary:
 
 Signoff rule:
 - Launch go/no-go is anchored to the governance snapshot commit and its CI evidence in this file.
-- Post-anchor docs-only commits may include supplemental CI evidence for audit continuity, but are not launch blockers.
+- Post-anchor docs-only commits may include a representative supplemental CI sample for audit continuity, but are not launch blockers and do not need to match latest HEAD.
 
 Because the launch channel is local-first, reverse-proxy auth is conditionally required only when an agency exposes `/api/*` to the internet.
 
@@ -35,7 +35,8 @@ Command used:
 gh api repos/Chet526/clones/actions/runs/28729808845 --jq '{run_id: .id, run_number: .run_number, workflow: .name, workflow_id: .workflow_id, head_sha: .head_sha, status: .status, conclusion: .conclusion, html_url: .html_url, run_started_at: .run_started_at, updated_at: .updated_at, created_at: .created_at}'
 ```
 
-## Supplemental CI Evidence (Post-Anchor Audit Continuity, Optional)
+## Supplemental CI Evidence (Optional Historical Sample)
+- Snapshot note: this is a representative post-anchor sample; it may lag current HEAD.
 - Workflow: `CI`
 - Run ID: `28730241026`
 - Run number: `10`
@@ -73,14 +74,14 @@ Output:
 
 Command:
 ```bash
-grep -n "52b31ec530c2a81c6647da7b5bf7f99cd03a4475" README.md site/public/index.html docs/LAUNCH_CHECKLIST.md
+grep -H "52b31ec530c2a81c6647da7b5bf7f99cd03a4475" README.md site/public/index.html docs/LAUNCH_CHECKLIST.md
 ```
 Output:
 ```text
-README.md:57:python -m pip install "git+https://github.com/Chet526/clones.git@52b31ec530c2a81c6647da7b5bf7f99cd03a4475"
-site/public/index.html:113:            <pre><code>python -m pip install "git+https://github.com/Chet526/clones.git@52b31ec530c2a81c6647da7b5bf7f99cd03a4475"  # Python 3.10+
-docs/LAUNCH_CHECKLIST.md:15:  - [x] [BLOCKER] Source install from immutable Git commit (`52b31ec530c2a81c6647da7b5bf7f99cd03a4475`) (current launch channel).
-docs/LAUNCH_CHECKLIST.md:62:- [x] [BLOCKER] Customer install references are pinned to immutable commit `52b31ec530c2a81c6647da7b5bf7f99cd03a4475` and documented in README/storefront.
+README.md:python -m pip install "git+https://github.com/Chet526/clones.git@52b31ec530c2a81c6647da7b5bf7f99cd03a4475"
+site/public/index.html:            <pre><code>python -m pip install "git+https://github.com/Chet526/clones.git@52b31ec530c2a81c6647da7b5bf7f99cd03a4475"  # Python 3.10+
+docs/LAUNCH_CHECKLIST.md:  - [x] [BLOCKER] Source install from immutable Git commit (`52b31ec530c2a81c6647da7b5bf7f99cd03a4475`) (current launch channel).
+docs/LAUNCH_CHECKLIST.md:- [x] [BLOCKER] Customer install references are pinned to immutable commit `52b31ec530c2a81c6647da7b5bf7f99cd03a4475` and documented in README/storefront.
 ```
 
 ## Conditional Control: Reverse-Proxy Auth for Internet-Exposed `/api/*`
