@@ -54,12 +54,13 @@ pip install -e .            # or: pip install -r requirements.txt
 The storefront currently points to the **source install** channel:
 
 ```bash
-python -m pip install "git+https://github.com/Chet526/clones.git@51fa5e730266bf1552347a99c8c8bf97cf2617dd"
+python -m pip install "git+https://github.com/Chet526/clones.git@52b31ec530c2a81c6647da7b5bf7f99cd03a4475"
 ```
 
 This pin is an immutable commit SHA for reproducible installs. Update it only
 through the documented release process in
 [`docs/GO_LIVE_RUNBOOK.md`](docs/GO_LIVE_RUNBOOK.md).
+Release provenance for this channel: `v0.3.0-launch -> 52b31ec530c2a81c6647da7b5bf7f99cd03a4475`.
 
 PyPI publishing is optional and can be added later as a separate release
 channel.

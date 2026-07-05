@@ -2,8 +2,9 @@
 
 ## 1. Pre-Launch Gates
 - Confirm CI green on latest commit.
-- Confirm docs/LAUNCH_CHECKLIST.md has no unresolved blocker-priority launch items.
-- Optional future-channel items (for example PyPI publishing or signed installers) may remain open if explicitly marked optional.
+- Confirm docs/LAUNCH_CHECKLIST.md has no unresolved `[BLOCKER]` items.
+- Confirm there are no unresolved `[CONDITIONAL-BLOCKER]` items whose conditions are true for the target deployment.
+- Items marked `[OPTIONAL]` may remain open without blocking launch.
 - Confirm Stripe live-mode products/prices and webhook endpoint are configured.
 - Confirm Netlify production env vars are set (Stripe, license secret, Supabase as needed).
 
@@ -12,6 +13,10 @@
 - Restrict access to service-role keys.
 - Never expose service-role keys in browser/client code.
 - For any internet-exposed self-host deployment, enforce reverse-proxy auth in front of `/api/*` in addition to app-level token mode.
+
+Scope note:
+- The reverse-proxy conditional blocker applies to the self-host investigator-data API served by GeoBrief (`python -m geobrief serve`).
+- Netlify storefront endpoints (`/api/create-checkout`, `/api/get-license`, `/api/account-config`, `/api/account-me`, `/api/account-portal`) are commerce/account functions and are evaluated under storefront security controls, not this self-host reverse-proxy condition.
 
 ## 3. Deploy
 - Deploy storefront/functions to production.
@@ -52,6 +57,7 @@
 - Create an annotated git tag and record the immutable commit SHA.
 - Update customer-facing install commands to that commit SHA.
 - Publish release notes and deployment metadata, then archive the runbook checklist evidence.
+- Record deployment-only control evidence in `docs/DEPLOYMENT_EVIDENCE.md`.
 
 ## 8. Post-Launch
 - Review support inbox and error telemetry daily for first 7 days.
