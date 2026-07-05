@@ -107,7 +107,7 @@ curl -i -H "Authorization: Bearer <proxy-issued-token>" https://<host>/api/plans
 - Date: N/A for current local-first launch profile
 
 ## Operational Go-Live Evidence (Production)
-Status: pending external verification in production environment.
+Status: executed; result = fail (not launch-ready).
 
 Required evidence:
 1. Stripe live-mode readiness
@@ -124,10 +124,35 @@ Required evidence:
    - Webhook signature validation and entitlement update path verified
 
 Evidence capture template:
-- Date/time (UTC): _pending_
-- Operator: _pending_
-- Environment: _pending_
-- Stripe dashboard evidence link/screenshot reference: _pending_
-- Netlify env verification command/output: _pending_
-- Smoke test command/output references: _pending_
-- Result: _pending_
+- Date/time (UTC): 2026-07-05
+- Operator: automated CLI verification in linked Netlify project context
+- Environment: `https://geobrief-le.netlify.app`
+- Stripe dashboard evidence link/screenshot reference: pending manual attachment
+- Netlify env verification command/output:
+   - `netlify status` -> project `geobrief-le` linked, authenticated user present.
+   - `netlify env:list --context production` -> required keys present:
+      - `GEOBRIEF_LICENSE_SECRET`
+      - `STRIPE_BILLING_PORTAL_RETURN_URL`
+      - `STRIPE_PRICE_PRO`
+      - `STRIPE_PRICE_STANDARD`
+      - `STRIPE_SECRET_KEY`
+      - `SUPABASE_ANON_KEY`
+      - `SUPABASE_SERVICE_ROLE_KEY`
+      - `SUPABASE_URL`
+- Smoke test command/output references:
+   - `GET /api/account-config` -> `200`, `auth_enabled=true` (non-sensitive fields validated)
+   - `GET /api/account-me` (no auth) -> `401` expected
+   - `POST /api/account-portal` (no auth) -> `401` expected
+   - `POST /api/create-checkout` with `{"plan":"standard"}` -> `200` with checkout URL containing `cs_test_...` (test-mode indicator)
+   - `POST /api/get-license` (no auth) -> `405` (unexpected for current release expectation)
+   - `GET /api/get-license?session_id=cs_test_invalid` -> `404` (indicates legacy GET contract still active in production)
+- Result: fail
+
+Blocking observations:
+1. Production checkout appears to be Stripe test-mode (`cs_test_...`), not confirmed live-mode.
+2. Production `get-license` contract does not match current secured release behavior (POST + authenticated ownership checks).
+
+Required remediation before launch pass:
+1. Deploy latest production functions that include the secured `get-license` POST/auth flow.
+2. Validate Stripe live-mode configuration (live key/products/prices/webhook delivery) and attach dashboard evidence.
+3. Re-run smoke tests and update this section to `result = pass`.

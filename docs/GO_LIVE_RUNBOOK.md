@@ -6,6 +6,7 @@
 - Confirm docs/LAUNCH_CHECKLIST.md has no unresolved `[BLOCKER]` items.
 - Confirm there are no unresolved `[CONDITIONAL-BLOCKER]` items whose conditions are true for the target deployment.
 - Items marked `[OPTIONAL]` may remain open without blocking launch.
+- Confirm `docs/DEPLOYMENT_EVIDENCE.md` section "Operational Go-Live Evidence (Production)" is completed (status no longer pending and result marked pass).
 - Confirm Stripe live-mode products/prices and webhook endpoint are configured.
 - Confirm Netlify production env vars are set (Stripe, license secret, Supabase as needed).
 

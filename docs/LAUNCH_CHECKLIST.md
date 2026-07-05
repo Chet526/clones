@@ -64,6 +64,13 @@ Priority policy:
 - [x] [CONDITIONAL-BLOCKER: internet-exposed deployment only] Reverse-proxy auth evidence is recorded in `docs/DEPLOYMENT_EVIDENCE.md`.
 - [x] [BLOCKER] Provenance verification commands are defined in the go-live runbook (`docs/GO_LIVE_RUNBOOK.md`) and executed with recorded output in `docs/DEPLOYMENT_EVIDENCE.md`.
 
+## 9) Production Operational Verification
+- [ ] [BLOCKER] `docs/DEPLOYMENT_EVIDENCE.md` operational go-live result is marked pass.
+- [ ] [BLOCKER] Stripe live-mode readiness is verified (live keys/products/prices + webhook delivery checks).
+- [ ] [BLOCKER] Production endpoint contract matches release expectations (`get-license` POST + auth ownership checks).
+- [ ] [BLOCKER] Netlify production environment readiness evidence is recorded.
+- [ ] [BLOCKER] Production smoke tests for checkout/license/account/webhook are completed and archived.
+
 ## Latest Check Run (2026-07-05)
 - `node --test site/functions/tests/functions.test.cjs` -> pass (11/11)
 - `node --check src/geobrief/webapp/static/app.js` -> pass
