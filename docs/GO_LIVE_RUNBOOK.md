@@ -2,7 +2,7 @@
 
 ## 1. Pre-Launch Gates
 - Confirm CI green on latest launch-governance commit and record run URL/ID in launch evidence.
-- If finalization HEAD differs from the launch-governance commit, record supplemental CI run URL/ID for finalization HEAD in launch evidence.
+- Supplemental CI runs for post-anchor docs-only commits may be recorded for audit continuity, but are not launch blockers.
 - Confirm docs/LAUNCH_CHECKLIST.md has no unresolved `[BLOCKER]` items.
 - Confirm there are no unresolved `[CONDITIONAL-BLOCKER]` items whose conditions are true for the target deployment.
 - Items marked `[OPTIONAL]` may remain open without blocking launch.

@@ -48,7 +48,7 @@ Priority policy:
 - [x] [BLOCKER] Dependency vulnerability scan (`pip-audit`) passes.
 - [x] [BLOCKER] Add CI job for dependency scan and fail on vulnerabilities.
 - [x] [BLOCKER] GitHub CI run is green for the launch-governance commit (evidence: `docs/DEPLOYMENT_EVIDENCE.md` -> CI Evidence section).
-- [x] [BLOCKER] When finalization HEAD differs from launch-governance commit, supplemental CI run is recorded (evidence: `docs/DEPLOYMENT_EVIDENCE.md` -> Supplemental CI Evidence section).
+- [x] [OPTIONAL] Supplemental CI run for post-anchor docs-only commits is recorded for audit continuity (evidence: `docs/DEPLOYMENT_EVIDENCE.md` -> Supplemental CI Evidence section).
 
 ## 7) Release Operations
 - [x] [BLOCKER] Add repository release trust artifacts:

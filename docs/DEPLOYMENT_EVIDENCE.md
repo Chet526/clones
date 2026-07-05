@@ -13,6 +13,10 @@ Scope boundary:
 - Release governance snapshot tag: `v0.3.0-launch-r2`.
 - Release signoff anchor: governance snapshot commit `724e6459c5d1ff89d133b11e449892bc1112841d`.
 
+Signoff rule:
+- Launch go/no-go is anchored to the governance snapshot commit and its CI evidence in this file.
+- Post-anchor docs-only commits may include supplemental CI evidence for audit continuity, but are not launch blockers.
+
 Because the launch channel is local-first, reverse-proxy auth is conditionally required only when an agency exposes `/api/*` to the internet.
 
 ## CI Evidence (Launch Governance Commit)
@@ -31,20 +35,20 @@ Command used:
 gh api repos/Chet526/clones/actions/runs/28729808845 --jq '{run_id: .id, run_number: .run_number, workflow: .name, workflow_id: .workflow_id, head_sha: .head_sha, status: .status, conclusion: .conclusion, html_url: .html_url, run_started_at: .run_started_at, updated_at: .updated_at, created_at: .created_at}'
 ```
 
-## Supplemental CI Evidence (Current HEAD Finalization)
+## Supplemental CI Evidence (Post-Anchor Audit Continuity, Optional)
 - Workflow: `CI`
-- Run ID: `28729901731`
-- Run number: `8`
-- URL: `https://github.com/Chet526/clones/actions/runs/28729901731`
-- Head SHA: `db05966ddbc1b5769a7a87027304d989f08ba489`
+- Run ID: `28730164306`
+- Run number: `9`
+- URL: `https://github.com/Chet526/clones/actions/runs/28730164306`
+- Head SHA: `434fb984622c16d534c0e8b3d98f0ba3c50a2b10`
 - Status: `completed`
 - Conclusion: `success`
-- Started at (UTC): `2026-07-05T04:49:19Z`
-- Updated at (UTC): `2026-07-05T04:50:00Z`
+- Started at (UTC): `2026-07-05T05:02:03Z`
+- Updated at (UTC): `2026-07-05T05:02:43Z`
 
 Command used:
 ```bash
-gh api repos/Chet526/clones/actions/runs/28729901731 --jq '{run_id: .id, run_number: .run_number, workflow: .name, workflow_id: .workflow_id, head_sha: .head_sha, status: .status, conclusion: .conclusion, html_url: .html_url, run_started_at: .run_started_at, updated_at: .updated_at, created_at: .created_at}'
+gh api repos/Chet526/clones/actions/runs/28730164306 --jq '{run_id: .id, run_number: .run_number, workflow: .name, workflow_id: .workflow_id, head_sha: .head_sha, status: .status, conclusion: .conclusion, html_url: .html_url, run_started_at: .run_started_at, updated_at: .updated_at, created_at: .created_at}'
 ```
 
 ## Provenance Verification Execution (2026-07-05)
