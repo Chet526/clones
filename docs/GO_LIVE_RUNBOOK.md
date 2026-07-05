@@ -1,7 +1,7 @@
 # GeoBrief LE Go-Live Runbook
 
 ## 1. Pre-Launch Gates
-- Confirm CI green on latest commit.
+- Confirm CI green on latest launch-governance commit and record run URL/ID in launch evidence.
 - Confirm docs/LAUNCH_CHECKLIST.md has no unresolved `[BLOCKER]` items.
 - Confirm there are no unresolved `[CONDITIONAL-BLOCKER]` items whose conditions are true for the target deployment.
 - Items marked `[OPTIONAL]` may remain open without blocking launch.
@@ -56,7 +56,7 @@ Scope note:
 - Build release artifacts with deterministic naming (`geobrief-<version>-<buildid>`).
 - Create an annotated git tag and record the immutable commit SHA.
 - Record the governance snapshot tag for the launch record (`v0.3.0-launch-r1` for this release cycle).
-- Update customer-facing install commands to that commit SHA.
+- Set customer-facing install commands to the immutable customer install commit SHA (may differ from the governance snapshot commit if only governance docs changed afterward).
 - Publish release notes and deployment metadata, then archive the runbook checklist evidence.
 - Record deployment-only control evidence in `docs/DEPLOYMENT_EVIDENCE.md`.
 

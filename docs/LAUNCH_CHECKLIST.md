@@ -47,6 +47,7 @@ Priority policy:
 - [x] [BLOCKER] Front-end syntax checks pass (web app + storefront scripts, CI-enforced).
 - [x] [BLOCKER] Dependency vulnerability scan (`pip-audit`) passes.
 - [x] [BLOCKER] Add CI job for dependency scan and fail on vulnerabilities.
+- [ ] [BLOCKER] GitHub CI run is green for the launch-governance commit (record run URL/ID).
 
 ## 7) Release Operations
 - [x] [BLOCKER] Add repository release trust artifacts:

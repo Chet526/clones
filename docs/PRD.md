@@ -1263,3 +1263,24 @@ GeoBrief LE is a local-first evidence processing tool that helps investigators t
 The entire product should be designed around this standard:
 
 A busy investigator with limited computer skills should be able to upload records, follow plain-English prompts, and produce a defensible map and report without needing a crime analyst, GIS training, or advanced Excel knowledge.
+
+---
+
+## 21. Release Governance and Launch Evidence
+
+To support defensibility, reproducibility, and commercial reliability, each market launch must include release-governance evidence.
+
+Required controls:
+
+- CI must pass on the launch-governance commit used for release signoff.
+- The release record must include an annotated governance snapshot tag.
+- Customer install instructions must pin to an immutable commit SHA.
+- Launch checklist must classify items as blocker, conditional-blocker, or optional.
+- Conditional controls must include scope boundaries and explicit signoff requirements when activated.
+
+Acceptance criteria:
+
+- A reviewer can identify one governance snapshot tag for the release.
+- A reviewer can verify the customer install pin SHA from public docs.
+- A reviewer can trace CI pass evidence (run ID/URL) for the launch-governance commit.
+- A reviewer can determine, from documented scope rules, whether conditional controls are required for the deployment profile.
