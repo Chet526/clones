@@ -47,7 +47,7 @@ Priority policy:
 - [x] [BLOCKER] Front-end syntax checks pass (web app + storefront scripts, CI-enforced).
 - [x] [BLOCKER] Dependency vulnerability scan (`pip-audit`) passes.
 - [x] [BLOCKER] Add CI job for dependency scan and fail on vulnerabilities.
-- [x] [BLOCKER] GitHub CI run is green for the launch-governance commit (record run URL/ID).
+- [x] [BLOCKER] GitHub CI run is green for the launch-governance commit (evidence: `docs/DEPLOYMENT_EVIDENCE.md` -> CI Evidence section).
 
 ## 7) Release Operations
 - [x] [BLOCKER] Add repository release trust artifacts:
@@ -61,7 +61,7 @@ Priority policy:
 - [x] [BLOCKER] Customer install references are pinned to immutable commit `52b31ec530c2a81c6647da7b5bf7f99cd03a4475` and documented in README/storefront.
 - [x] [BLOCKER] Install references in customer docs point to the same immutable commit.
 - [x] [CONDITIONAL-BLOCKER: internet-exposed deployment only] Reverse-proxy auth evidence is recorded in `docs/DEPLOYMENT_EVIDENCE.md`.
-- [x] [BLOCKER] Provenance verification commands are defined in the go-live runbook and executed during release.
+- [x] [BLOCKER] Provenance verification commands are defined in the go-live runbook (`docs/GO_LIVE_RUNBOOK.md`) and executed with recorded output in `docs/DEPLOYMENT_EVIDENCE.md`.
 
 ## Latest Check Run (2026-07-05)
 - `node --test site/functions/tests/functions.test.cjs` -> pass (11/11)
