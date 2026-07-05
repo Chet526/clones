@@ -105,3 +105,29 @@ curl -i -H "Authorization: Bearer <proxy-issued-token>" https://<host>/api/plans
 - Deployment owner: N/A for current local-first launch profile
 - Security reviewer: N/A for current local-first launch profile
 - Date: N/A for current local-first launch profile
+
+## Operational Go-Live Evidence (Production)
+Status: pending external verification in production environment.
+
+Required evidence:
+1. Stripe live-mode readiness
+   - Live products/prices confirmed for Standard and Pro plans.
+   - Webhook endpoint configured and receiving test deliveries.
+2. Netlify production environment readiness
+   - Required production env vars configured and validated.
+3. Deploy and smoke-test results
+   - `/api/create-checkout` functional
+   - `/api/get-license` functional
+   - `/api/account-config` functional
+   - `/api/account-me` functional
+   - `/api/account-portal` functional
+   - Webhook signature validation and entitlement update path verified
+
+Evidence capture template:
+- Date/time (UTC): _pending_
+- Operator: _pending_
+- Environment: _pending_
+- Stripe dashboard evidence link/screenshot reference: _pending_
+- Netlify env verification command/output: _pending_
+- Smoke test command/output references: _pending_
+- Result: _pending_

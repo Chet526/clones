@@ -57,7 +57,7 @@ Scope note:
 - Build release artifacts with deterministic naming (`geobrief-<version>-<buildid>`).
 - Create an annotated git tag and record the immutable commit SHA.
 - Record the governance snapshot tag for the launch record (`v0.3.0-launch-r2` for this release cycle).
-- Set customer-facing install commands to the immutable customer install commit SHA (may differ from the governance snapshot commit if only governance docs changed afterward).
+- Set customer-facing install commands to the immutable customer install commit SHA (may differ from the governance snapshot commit when only non-runtime governance artifacts changed afterward, such as release docs or CI workflow policy).
 - Publish release notes and deployment metadata, then archive the runbook checklist evidence.
 - Record deployment-only control evidence in `docs/DEPLOYMENT_EVIDENCE.md`.
 
