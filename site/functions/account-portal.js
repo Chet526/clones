@@ -3,7 +3,7 @@
 const {
   json,
   getSupabaseUser,
-  findCustomerByEmail,
+  resolveStripeCustomerForUser,
   stripeRequest,
 } = require("./_account");
 
@@ -19,7 +19,15 @@ exports.handler = async (event) => {
     return json(503, { error: "Billing is not configured yet." });
   }
 
-  const customer = await findCustomerByEmail(secretKey, auth.user.email);
+  const resolved = await resolveStripeCustomerForUser(secretKey, auth.user);
+  if (resolved.error === "multiple_customers") {
+    return json(409, {
+      error:
+        "Multiple billing customers match this email. Contact support to merge records.",
+    });
+  }
+
+  const customer = resolved.customer;
   if (!customer) {
     return json(404, {
       error: "No Stripe customer found for this account email yet.",

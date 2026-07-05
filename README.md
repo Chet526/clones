@@ -49,6 +49,21 @@ source .venv/bin/activate
 pip install -e .            # or: pip install -r requirements.txt
 ```
 
+### Public install channel (current)
+
+The storefront currently points to the **source install** channel:
+
+```bash
+python -m pip install "git+https://github.com/Chet526/clones.git@51fa5e730266bf1552347a99c8c8bf97cf2617dd"
+```
+
+This pin is an immutable commit SHA for reproducible installs. Update it only
+through the documented release process in
+[`docs/GO_LIVE_RUNBOOK.md`](docs/GO_LIVE_RUNBOOK.md).
+
+PyPI publishing is optional and can be added later as a separate release
+channel.
+
 ### Or run with Docker
 
 ```bash
@@ -58,6 +73,23 @@ docker compose up --build   # serves http://localhost:8000, data on a volume
 
 All configuration is by environment variable — see [.env.example](.env.example)
 for the complete annotated list. Never commit a real `.env`.
+
+### Self-host API access control (recommended)
+
+When the server is reachable beyond localhost, enable API token auth:
+
+```bash
+export GEOBRIEF_API_AUTH_MODE=token
+export GEOBRIEF_API_TOKEN="<long-random-token>"
+```
+
+In `token` mode, protected `/api/*` endpoints require either:
+
+* `Authorization: Bearer <token>`, or
+* `x-api-key: <token>`
+
+Stripe webhooks (`/api/billing/webhook`) remain signature-authenticated via
+`STRIPE_WEBHOOK_SECRET` and do not require the API token.
 
 ## Use it — web app (guided wizard)
 
@@ -201,6 +233,8 @@ serverless functions in [site/functions](site/functions):
     `STRIPE_PRICE_STANDARD` / `_PRO`).
 * `get-license` — exchanges a paid checkout session for a signed license key
   whose expiry tracks the subscription's billing period (+7 days grace).
+  Requires a valid Supabase bearer token and enforces that the signed-in
+  account email matches the checkout email.
 * `account-config`, `account-me`, `account-portal` — passwordless account
   login + subscription lookup + Stripe billing portal for SaaS users.
 
@@ -243,6 +277,7 @@ If you want customer accounts, enable `/account.html` with Supabase Auth
 ```bash
 netlify env:set SUPABASE_URL https://<project>.supabase.co
 netlify env:set SUPABASE_ANON_KEY <anon-public-key>
+netlify env:set SUPABASE_SERVICE_ROLE_KEY <service-role-secret>
 netlify env:set STRIPE_BILLING_PORTAL_RETURN_URL https://geobrief-le.netlify.app/account.html
 netlify deploy --prod
 ```
@@ -251,8 +286,13 @@ How account management works:
 
 * User signs in on `/account.html` with email magic link.
 * Backend verifies the Supabase access token.
-* Backend finds Stripe customer by signed-in email.
+* Backend resolves Stripe customer from canonical `account_profiles.stripe_customer_id`.
+* If no canonical id exists yet, backend performs guarded email lookup:
+  exactly one match is accepted and persisted; multiple matches return a
+  conflict for manual support resolution.
 * Backend opens Stripe Billing Portal for upgrades/cancellations/payment updates.
+* License retrieval on `/success.html` requires sign-in and same-email match
+  before issuing a key.
 
 This gives you SaaS-style account access **without building a custom account DB
 first**. A custom database becomes necessary only when you need team workspaces,

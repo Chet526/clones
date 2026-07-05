@@ -8,9 +8,11 @@ default. No data leaves the machine.
 from __future__ import annotations
 
 import base64
+import os
+import secrets
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -58,6 +60,63 @@ def health() -> dict:
     return {"status": "ok", "product": "GeoBrief LE", "version": __version__}
 
 
+def _api_auth_mode() -> str:
+    """Runtime API auth mode for self-host deployments.
+
+    Supported values:
+    - ``off`` (default): no API token required.
+    - ``token``: require bearer token or x-api-key for protected endpoints.
+    """
+
+    return os.environ.get("GEOBRIEF_API_AUTH_MODE", "off").strip().lower()
+
+
+def _require_api_auth(request: Request) -> None:
+    """Optional API token gate for non-localhost deployments.
+
+    By default the local-first app is open on localhost. When self-hosting on
+    a reachable interface, set ``GEOBRIEF_API_AUTH_MODE=token`` and provide
+    ``GEOBRIEF_API_TOKEN`` to require authentication on protected routes.
+    """
+
+    mode = _api_auth_mode()
+    if mode in {"", "off", "none", "disabled"}:
+        return
+    if mode != "token":
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Unsupported GEOBRIEF_API_AUTH_MODE. "
+                "Use 'off' or 'token'."
+            ),
+        )
+
+    expected = os.environ.get("GEOBRIEF_API_TOKEN", "").strip()
+    if not expected:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "API auth mode is 'token' but GEOBRIEF_API_TOKEN is not "
+                "configured."
+            ),
+        )
+
+    auth_header = request.headers.get("authorization", "")
+    presented = ""
+    if auth_header.lower().startswith("bearer "):
+        presented = auth_header[7:].strip()
+    if not presented:
+        presented = request.headers.get("x-api-key", "").strip()
+
+    if not presented or not secrets.compare_digest(presented, expected):
+        raise HTTPException(
+            status_code=401,
+            detail=(
+                "Unauthorized. Provide a valid bearer token or x-api-key."
+            ),
+        )
+
+
 def _plan_allows(feature: str) -> bool:
     """True when the app's currently enforced plan grants ``feature``."""
     return effective_plan().allows(feature)
@@ -79,7 +138,7 @@ def _assistant_upsell() -> dict:
     }
 
 
-@app.get("/api/plans")
+@app.get("/api/plans", dependencies=[Depends(_require_api_auth)])
 def plans() -> dict:
     """List the subscription plans and report which one is active."""
     active = effective_plan()
@@ -109,14 +168,14 @@ class CaseCreateRequest(BaseModel):
     notes: str = ""
 
 
-@app.get("/api/cases")
+@app.get("/api/cases", dependencies=[Depends(_require_api_auth)])
 def list_cases() -> dict:
     """List local case workspaces."""
     with CaseStore() as store:
         return {"cases": store.list_cases()}
 
 
-@app.post("/api/cases")
+@app.post("/api/cases", dependencies=[Depends(_require_api_auth)])
 def create_case(request: CaseCreateRequest) -> JSONResponse:
     """Create a new local case workspace."""
     try:
@@ -133,7 +192,7 @@ def create_case(request: CaseCreateRequest) -> JSONResponse:
     return JSONResponse(case, status_code=201)
 
 
-@app.get("/api/cases/{case_id}")
+@app.get("/api/cases/{case_id}", dependencies=[Depends(_require_api_auth)])
 def case_detail(case_id: int) -> dict:
     """A case with its source files and exports."""
     with CaseStore() as store:
@@ -148,7 +207,9 @@ def case_detail(case_id: int) -> dict:
         }
 
 
-@app.get("/api/cases/{case_id}/audit")
+@app.get(
+    "/api/cases/{case_id}/audit", dependencies=[Depends(_require_api_auth)]
+)
 def case_audit(case_id: int) -> dict:
     """A case's tamper-evident audit log."""
     with CaseStore() as store:
@@ -162,7 +223,7 @@ def case_audit(case_id: int) -> dict:
         }
 
 
-@app.get("/api/billing/status")
+@app.get("/api/billing/status", dependencies=[Depends(_require_api_auth)])
 def billing_status() -> dict:
     """Report whether real billing is configured and the active plan."""
     service = BillingService.from_env()
@@ -174,7 +235,7 @@ def billing_status() -> dict:
     }
 
 
-@app.post("/api/billing/checkout")
+@app.post("/api/billing/checkout", dependencies=[Depends(_require_api_auth)])
 def billing_checkout(request: CheckoutRequest) -> JSONResponse:
     """Create a Stripe Checkout Session and return its redirect URL."""
     service = BillingService.from_env()
@@ -204,7 +265,7 @@ async def billing_webhook(request: Request) -> JSONResponse:
     return JSONResponse({"received": True})
 
 
-@app.post("/api/detect")
+@app.post("/api/detect", dependencies=[Depends(_require_api_auth)])
 async def detect(file: UploadFile = File(...)) -> JSONResponse:
     """Inspect an uploaded file: list its columns and detected mapping.
 
@@ -247,7 +308,7 @@ def _mapping_override(
     )
 
 
-@app.get("/api/training/sample")
+@app.get("/api/training/sample", dependencies=[Depends(_require_api_auth)])
 def training_sample() -> JSONResponse:
     """The bundled, clearly fake practice file for training mode."""
     return JSONResponse(
@@ -258,7 +319,7 @@ def training_sample() -> JSONResponse:
     )
 
 
-@app.post("/api/process")
+@app.post("/api/process", dependencies=[Depends(_require_api_auth)])
 async def process(
     file: UploadFile = File(...),
     display_timezone: str = Form("UTC"),
@@ -364,7 +425,9 @@ class AssistantRequest(BaseModel):
     geojson: dict | None = None
 
 
-@app.get("/api/assistant/status")
+@app.get(
+    "/api/assistant/status", dependencies=[Depends(_require_api_auth)]
+)
 def assistant_status() -> JSONResponse:
     """Report assistant availability for the active plan.
 
@@ -389,7 +452,7 @@ def assistant_status() -> JSONResponse:
     )
 
 
-@app.post("/api/assistant")
+@app.post("/api/assistant", dependencies=[Depends(_require_api_auth)])
 def assistant(request: AssistantRequest) -> JSONResponse:
     """Answer an investigator question about already-processed data.
 

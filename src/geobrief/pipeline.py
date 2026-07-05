@@ -26,7 +26,7 @@ from .hashing import sha256_bytes
 from .ingest import read_dataframe_from_bytes
 from .models import LocationRecord, ValidationStatus
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 
 @dataclass

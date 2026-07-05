@@ -3,6 +3,8 @@
 // its URL. Secrets come from Netlify env vars — never expose them client-side.
 "use strict";
 
+const { maybeSupabaseUser } = require("./_account");
+
 const PLAN_PRICE_ENV = {
   standard: "STRIPE_PRICE_STANDARD",
   pro: "STRIPE_PRICE_PRO",
@@ -55,6 +57,15 @@ exports.handler = async (event) => {
     "subscription_data[metadata][plan]": plan,
   });
 
+  // If checkout is started from a signed-in account, pin Stripe metadata to
+  // that identity to make later entitlement reconciliation deterministic.
+  const signedInUser = await maybeSupabaseUser(event);
+  if (signedInUser?.email) {
+    params.set("customer_email", signedInUser.email);
+    params.set("metadata[supabase_user_id]", signedInUser.id || "");
+    params.set("subscription_data[metadata][supabase_user_id]", signedInUser.id || "");
+  }
+
   const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
     headers: {
@@ -74,7 +85,13 @@ exports.handler = async (event) => {
 function json(statusCode, body) {
   return {
     statusCode,
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
+      "Referrer-Policy": "no-referrer",
+    },
     body: JSON.stringify(body),
   };
 }

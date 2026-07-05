@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Thank you — GeoBrief LE</title>
   <meta name="robots" content="noindex" />
+  <meta name="referrer" content="no-referrer" />
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.0" integrity="sha384-aQINOMM+PD7Wbz0cwM3yxGvli7xmmF7UDBG7nMMXbb6Wi6tF6Q2VZNfBUI2K0vSY" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
   <header class="nav">
@@ -17,7 +19,17 @@
 
   <main class="wrap success">
     <h1>Thank you for subscribing!</h1>
-    <p id="status" class="lede">Fetching your license key…</p>
+    <p id="status" class="lede">Preparing secure license retrieval…</p>
+
+    <section id="signin-box" class="account-card" hidden>
+      <h2>Sign in to retrieve your license</h2>
+      <p class="fine">Use the same email used at checkout.</p>
+      <form id="signin-form" class="account-form">
+        <input id="signin-email" type="email" required placeholder="you@agency.gov" />
+        <button class="btn primary" type="submit">Send magic link</button>
+      </form>
+      <p id="signin-status" class="fine"></p>
+    </section>
 
     <div id="license-box" class="license-box" hidden>
       <h2>Your license key</h2>
@@ -42,10 +54,54 @@ python -m geobrief serve</code></pre>
         status.textContent = "Missing checkout session. Use the link from your receipt email.";
         return;
       }
+
+      const configRes = await fetch("/api/account-config");
+      const config = await configRes.json();
+      if (!config.auth_enabled) {
+        status.textContent = "Account auth is not configured yet. Contact support.";
+        return;
+      }
+
+      const supabaseClient = window.supabase.createClient(
+        config.supabase_url,
+        config.supabase_anon_key
+      );
+
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession();
+
+      if (!session) {
+        status.textContent = "Sign in to verify your purchase and retrieve your license key.";
+        const signinBox = document.getElementById("signin-box");
+        signinBox.hidden = false;
+        document.getElementById("signin-form").addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const email = document.getElementById("signin-email").value.trim();
+          if (!email) return;
+          document.getElementById("signin-status").textContent = "Sending magic link…";
+          const { error } = await supabaseClient.auth.signInWithOtp({
+            email,
+            options: {
+              emailRedirectTo:
+                `${location.origin}/success.html?session_id=${encodeURIComponent(sessionId)}`,
+            },
+          });
+          document.getElementById("signin-status").textContent =
+            error?.message || "Check your email for the sign-in link.";
+        });
+        return;
+      }
+
       try {
-        const response = await fetch(
-          "/api/get-license?session_id=" + encodeURIComponent(sessionId)
-        );
+        const response = await fetch("/api/get-license", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ session_id: sessionId }),
+        });
         const body = await response.json();
         if (!response.ok) {
           status.textContent = body.error || "Could not retrieve your license key.";

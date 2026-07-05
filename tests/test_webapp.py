@@ -59,6 +59,107 @@ def test_process_endpoint():
     assert body["report_pdf_base64"]
 
 
+def test_process_requires_token_when_api_auth_enabled(monkeypatch):
+    monkeypatch.setenv("GEOBRIEF_API_AUTH_MODE", "token")
+    monkeypatch.setenv("GEOBRIEF_API_TOKEN", "test-token")
+    csv = (
+        "latitude,longitude,timestamp,accuracy_m\n"
+        "41.88,-87.62,2024-03-01T08:00:00Z,10\n"
+    )
+    files = {"file": ("records.csv", io.BytesIO(csv.encode()), "text/csv")}
+
+    unauthorized = client.post(
+        "/api/process",
+        files=files,
+        data={"display_timezone": "America/Chicago"},
+    )
+    assert unauthorized.status_code == 401
+
+    authorized = client.post(
+        "/api/process",
+        files=files,
+        data={"display_timezone": "America/Chicago"},
+        headers={"Authorization": "Bearer test-token"},
+    )
+    assert authorized.status_code == 200
+
+
+def test_process_token_mode_requires_configured_token(monkeypatch):
+    monkeypatch.setenv("GEOBRIEF_API_AUTH_MODE", "token")
+    monkeypatch.delenv("GEOBRIEF_API_TOKEN", raising=False)
+    csv = (
+        "latitude,longitude,timestamp,accuracy_m\n"
+        "41.88,-87.62,2024-03-01T08:00:00Z,10\n"
+    )
+    files = {"file": ("records.csv", io.BytesIO(csv.encode()), "text/csv")}
+    response = client.post(
+        "/api/process",
+        files=files,
+        data={"display_timezone": "America/Chicago"},
+    )
+    assert response.status_code == 503
+
+
+def test_process_accepts_x_api_key_when_api_auth_enabled(monkeypatch):
+    monkeypatch.setenv("GEOBRIEF_API_AUTH_MODE", "token")
+    monkeypatch.setenv("GEOBRIEF_API_TOKEN", "test-token")
+    csv = (
+        "latitude,longitude,timestamp,accuracy_m\n"
+        "41.88,-87.62,2024-03-01T08:00:00Z,10\n"
+    )
+    files = {"file": ("records.csv", io.BytesIO(csv.encode()), "text/csv")}
+
+    response = client.post(
+        "/api/process",
+        files=files,
+        data={"display_timezone": "America/Chicago"},
+        headers={"x-api-key": "test-token"},
+    )
+    assert response.status_code == 200
+
+
+def test_unsupported_api_auth_mode_returns_500(monkeypatch):
+    monkeypatch.setenv("GEOBRIEF_API_AUTH_MODE", "unknown")
+    response = client.get("/api/plans")
+    assert response.status_code == 500
+    assert "Unsupported GEOBRIEF_API_AUTH_MODE" in response.json()["detail"]
+
+
+def test_protected_routes_require_token_in_token_mode(monkeypatch):
+    monkeypatch.setenv("GEOBRIEF_API_AUTH_MODE", "token")
+    monkeypatch.setenv("GEOBRIEF_API_TOKEN", "test-token")
+
+    assert client.get("/api/plans").status_code == 401
+    assert client.get("/api/cases").status_code == 401
+    assert client.get("/api/assistant/status").status_code == 401
+
+    assert (
+        client.get(
+            "/api/plans", headers={"Authorization": "Bearer test-token"}
+        ).status_code
+        == 200
+    )
+    assert (
+        client.get(
+            "/api/cases", headers={"Authorization": "Bearer test-token"}
+        ).status_code
+        == 200
+    )
+
+
+def test_webhook_remains_signature_authenticated_without_api_token(monkeypatch):
+    monkeypatch.setenv("GEOBRIEF_API_AUTH_MODE", "token")
+    monkeypatch.setenv("GEOBRIEF_API_TOKEN", "test-token")
+    monkeypatch.setenv("STRIPE_WEBHOOK_SECRET", "whsec_test")
+
+    response = client.post(
+        "/api/billing/webhook",
+        content=b'{"type": "ping"}',
+        headers={"stripe-signature": "t=1,v1=deadbeef"},
+    )
+    assert response.status_code == 400
+
+
 def test_unsupported_file_type_rejected():
     files = {"file": ("notes.docx", io.BytesIO(b"hello"), "text/plain")}
     response = client.post("/api/process", files=files)
