@@ -11,6 +11,7 @@ Scope boundary:
 - Launch channel type: local-first investigator install (not a shared internet-exposed hosted API).
 - Customer install pin: `52b31ec530c2a81c6647da7b5bf7f99cd03a4475`.
 - Release governance snapshot tag: `v0.3.0-launch-r2`.
+- Release signoff anchor: governance snapshot commit `724e6459c5d1ff89d133b11e449892bc1112841d`.
 
 Because the launch channel is local-first, reverse-proxy auth is conditionally required only when an agency exposes `/api/*` to the internet.
 
@@ -28,6 +29,22 @@ Because the launch channel is local-first, reverse-proxy auth is conditionally r
 Command used:
 ```bash
 gh api repos/Chet526/clones/actions/runs/28729808845 --jq '{run_id: .id, run_number: .run_number, workflow: .name, workflow_id: .workflow_id, head_sha: .head_sha, status: .status, conclusion: .conclusion, html_url: .html_url, run_started_at: .run_started_at, updated_at: .updated_at, created_at: .created_at}'
+```
+
+## Supplemental CI Evidence (Current HEAD Finalization)
+- Workflow: `CI`
+- Run ID: `28729901731`
+- Run number: `8`
+- URL: `https://github.com/Chet526/clones/actions/runs/28729901731`
+- Head SHA: `db05966ddbc1b5769a7a87027304d989f08ba489`
+- Status: `completed`
+- Conclusion: `success`
+- Started at (UTC): `2026-07-05T04:49:19Z`
+- Updated at (UTC): `2026-07-05T04:50:00Z`
+
+Command used:
+```bash
+gh api repos/Chet526/clones/actions/runs/28729901731 --jq '{run_id: .id, run_number: .run_number, workflow: .name, workflow_id: .workflow_id, head_sha: .head_sha, status: .status, conclusion: .conclusion, html_url: .html_url, run_started_at: .run_started_at, updated_at: .updated_at, created_at: .created_at}'
 ```
 
 ## Provenance Verification Execution (2026-07-05)
