@@ -64,7 +64,7 @@ Scope note:
 Provenance verification commands (record command + output in deployment evidence):
 - `git show-ref --tags <governance_snapshot_tag>`
 - `git rev-parse <governance_snapshot_tag>^{}`
-- `grep -n "<customer_install_pin_sha>" README.md site/public/index.html docs/LAUNCH_CHECKLIST.md docs/DEPLOYMENT_EVIDENCE.md`
+- `grep -n "<customer_install_pin_sha>" README.md site/public/index.html docs/LAUNCH_CHECKLIST.md`
 - `gh api repos/<owner>/<repo>/actions/runs/<run_id> --jq '{run_id: .id, run_number: .run_number, workflow: .name, head_sha: .head_sha, status: .status, conclusion: .conclusion, html_url: .html_url, run_started_at: .run_started_at, updated_at: .updated_at}'`
 
 ## 8. Post-Launch
