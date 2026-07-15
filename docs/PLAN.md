@@ -2,7 +2,7 @@
 
 _Last updated: 2026-07-15_
 
-This document reflects the current repository state and tracks phased delivery against the roadmap in `/home/runner/work/clones/clones/docs/PRD.md`.
+This document reflects the current repository state and tracks phased delivery against the roadmap in `docs/PRD.md`.
 
 ---
 
@@ -30,7 +30,7 @@ Additional capabilities delivered ahead of later roadmap items:
 
 ### Phase 1 baseline hardening — ✅ Completed
 
-- GitHub Actions CI at `/home/runner/work/clones/clones/.github/workflows/ci.yml`
+- GitHub Actions CI at `.github/workflows/ci.yml`
 - CI runs on pull requests and pushes to `main`
 - Python matrix: 3.10, 3.11, 3.12
 - Install step: `python -m pip install -e ".[dev]"`
