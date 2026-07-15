@@ -9,6 +9,7 @@ let layerGroup = null;
 let lastResult = null;
 let assistantAvailable = true;
 let billingEnabled = false;
+let currentCaseId = null;
 
 function el(id) {
   return document.getElementById(id);
@@ -16,6 +17,13 @@ function el(id) {
 
 function setStatus(message, isError) {
   const status = el("status");
+  status.textContent = message || "";
+  status.classList.toggle("error", Boolean(isError));
+}
+
+function setCaseStatus(message, isError) {
+  const status = el("case-status");
+  if (!status) return;
   status.textContent = message || "";
   status.classList.toggle("error", Boolean(isError));
 }
@@ -144,6 +152,12 @@ async function handleSubmit(event) {
   const formData = new FormData();
   formData.append("file", fileInput.files[0]);
   formData.append("display_timezone", el("tz-select").value);
+  formData.append("training_mode", String(el("training-mode").checked));
+  formData.append("case_id", currentCaseId || "");
+  formData.append("latitude_column", el("map-lat").value.trim());
+  formData.append("longitude_column", el("map-lon").value.trim());
+  formData.append("timestamp_column", el("map-time").value.trim());
+  formData.append("accuracy_column", el("map-acc").value.trim());
 
   setStatus("Processing… the software is doing the hard part.");
   el("process-btn").disabled = true;
@@ -163,6 +177,11 @@ async function handleSubmit(event) {
     renderStats(data.summary);
     renderWarnings(data.summary);
     renderMap(data.geojson);
+    if (currentCaseId) {
+      loadAudit(currentCaseId);
+    } else {
+      renderAudit([]);
+    }
     setStatus("Done. Review your map and download your outputs below.");
     el("results-card").scrollIntoView({ behavior: "smooth" });
   } catch (err) {
@@ -193,6 +212,87 @@ function wireDownloads() {
       "application/geo+json"
     );
   });
+  el("dl-kml").addEventListener("click", () => {
+    if (!lastResult) return;
+    download(baseName() + "_points.kml", lastResult.kml, "application/vnd.google-earth.kml+xml");
+  });
+  el("dl-pdf").addEventListener("click", () => {
+    if (!lastResult || !lastResult.processing_report_pdf_base64) return;
+    const bytes = atob(lastResult.processing_report_pdf_base64);
+    const arr = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+    const blob = new Blob([arr], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = baseName() + "_processing_report.pdf";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+}
+
+function renderAudit(events) {
+  const list = el("audit-list");
+  if (!list) return;
+  if (!events || !events.length) {
+    list.innerHTML = "<li>No case audit events yet.</li>";
+    return;
+  }
+  list.innerHTML = events
+    .map((evt) => {
+      const ts = escapeHtml(evt.timestamp || "");
+      const type = escapeHtml(evt.event_type || "");
+      return `<li><strong>${type}</strong> <span>(${ts})</span></li>`;
+    })
+    .join("");
+}
+
+async function loadAudit(caseId) {
+  if (!caseId) {
+    renderAudit([]);
+    return;
+  }
+  try {
+    const response = await fetch("/api/cases/" + encodeURIComponent(caseId) + "/audit");
+    if (!response.ok) return;
+    const data = await response.json();
+    renderAudit(data.events || []);
+  } catch (err) {
+    /* audit is best-effort */
+  }
+}
+
+async function createCase(event) {
+  event.preventDefault();
+  const payload = {
+    case_number: el("case-number").value.trim(),
+    agency_name: el("agency-name").value.trim(),
+    investigator_name: el("investigator-name").value.trim(),
+    offense_type: el("offense-type").value.trim(),
+    notes: el("case-notes").value.trim(),
+    training_mode: el("training-mode").checked,
+  };
+  try {
+    const response = await fetch("/api/cases", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || "Could not create case.");
+    }
+    currentCaseId = data.case_id;
+    const summary = el("case-summary");
+    summary.classList.remove("hidden");
+    summary.textContent = "Active case: " + currentCaseId;
+    setCaseStatus("Case workspace created.", false);
+    loadAudit(currentCaseId);
+  } catch (err) {
+    setCaseStatus(err.message, true);
+  }
 }
 
 function appendChat(role, text, extra) {
@@ -408,10 +508,12 @@ async function refreshAssistantMode() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  el("case-form").addEventListener("submit", createCase);
   el("upload-form").addEventListener("submit", handleSubmit);
   wireDownloads();
   wireAssistant();
   wirePlans();
   loadPlans();
   refreshAssistantMode();
+  renderAudit([]);
 });

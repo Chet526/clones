@@ -7,11 +7,11 @@ location records (spreadsheets, provider returns, phone/app records) into a
 cleaned data set, a map, and report-ready outputs — without needing GIS
 training or advanced spreadsheet skills.
 
-> This repository currently implements the **Phase 1 prototype** from the
-> [product requirements document](docs/PRD.md). See the roadmap in the PRD for
-> what comes next.
+> This repository now implements the **market-ready MVP (Phase 2)** from the
+> [product requirements document](docs/PRD.md), including case workspaces,
+> immutable audit logs, KML/PDF exports, and training mode.
 
-## What Phase 1 does
+## What the MVP does
 
 Upload a CSV or Excel file and GeoBrief LE will:
 
@@ -23,8 +23,11 @@ Upload a CSV or Excel file and GeoBrief LE will:
   UTC, convert to a display time zone, and flag missing, invalid, duplicate,
   low-accuracy, reversed, or time-zone-uncertain points — **without ever
   deleting rows**.
-- **Produce outputs**: an interactive map, a cleaned spreadsheet (CSV), a JSON
-  processing summary, and map-ready GeoJSON.
+- **Produce outputs**: an interactive map, cleaned spreadsheet (CSV), JSON
+  processing summary, map-ready GeoJSON, Google Earth KML, and a PDF
+  processing report.
+- **Create case workspaces** with case metadata and immutable JSONL audit logs.
+- **Training mode** for safe practice outputs with explicit practice labeling.
 
 ## Requirements
 
@@ -54,8 +57,9 @@ python -m geobrief process sample_data/sample_locations.csv \
     --tz America/Chicago --out ./out
 ```
 
-This writes `*_cleaned.csv`, `*_summary.json`, and `*_points.geojson` next to
-the input (or into `--out`).
+This writes `*_cleaned.csv`, `*_summary.json`, `*_points.geojson`,
+`*_points.kml`, and `*_processing_report.pdf` next to the input (or into
+`--out`).
 
 ## Ask the AI assistant
 
@@ -189,7 +193,6 @@ tests/           unit + end-to-end tests
 
 ## Notes on scope
 
-Phase 1 intentionally excludes case accounts, cloud collaboration, provider
-parser templates, PDF exhibits, and the legal-process guide. Those are later
-phases in the [PRD](docs/PRD.md). Draft outputs must always be verified by the
-investigator before use.
+The local-first MVP intentionally excludes full agency cloud accounts, live
+ping operations, and CAD/RMS integration. Draft outputs must always be verified
+by the investigator before use.

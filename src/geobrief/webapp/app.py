@@ -8,6 +8,7 @@ default. No data leaves the machine.
 from __future__ import annotations
 
 from pathlib import Path
+import base64
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -16,8 +17,10 @@ from pydantic import BaseModel
 
 from ..assistant import Assistant, AssistantConfig
 from ..billing import BillingError, BillingService, effective_plan
+from ..casework import CaseStore
 from ..ingest import UnsupportedFileTypeError
 from ..pipeline import __version__, process_bytes
+from ..models import ColumnMapping
 from ..subscription import (
     Feature,
     PLANS,
@@ -132,6 +135,12 @@ async def process(
     file: UploadFile = File(...),
     display_timezone: str = Form("UTC"),
     assume_source_timezone: str = Form(""),
+    case_id: str = Form(""),
+    training_mode: bool = Form(False),
+    latitude_column: str = Form(""),
+    longitude_column: str = Form(""),
+    timestamp_column: str = Form(""),
+    accuracy_column: str = Form(""),
 ) -> JSONResponse:
     """Process an uploaded CSV/XLSX file and return summary + map data."""
     data = await file.read()
@@ -139,11 +148,23 @@ async def process(
         raise HTTPException(status_code=400, detail="The file is empty.")
 
     try:
+        override = ColumnMapping(
+            latitude=latitude_column or None,
+            longitude=longitude_column or None,
+            timestamp=timestamp_column or None,
+            accuracy=accuracy_column or None,
+        )
+        mapping_override = (
+            override if any(override.to_dict().values()) else None
+        )
         result = process_bytes(
             data,
             file.filename or "upload",
             display_timezone=display_timezone or "UTC",
             assume_source_timezone=assume_source_timezone or None,
+            mapping_override=mapping_override,
+            case_id=case_id or None,
+            training_mode=training_mode,
         )
     except UnsupportedFileTypeError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -152,14 +173,77 @@ async def process(
             status_code=400, detail=f"Could not read file: {exc}"
         ) from exc
 
+    if case_id:
+        store = CaseStore.from_env()
+        try:
+            store.log_event(
+                case_id,
+                "file_processed",
+                {
+                    "filename": file.filename or "upload",
+                    "file_size": len(data),
+                    "sha256": result.sha256,
+                    "record_counts": result.summary()["record_counts"],
+                },
+            )
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="Case not found.") from exc
+
+    pdf_b64 = base64.b64encode(result.processing_report_pdf()).decode("ascii")
     return JSONResponse(
         {
             "summary": result.summary(),
             "geojson": result.geojson(),
             "cleaned_csv": result.cleaned_csv(),
             "summary_json": result.summary_json(),
+            "kml": result.kml(),
+            "processing_report_pdf_base64": pdf_b64,
         }
     )
+
+
+class CaseCreateRequest(BaseModel):
+    case_number: str = ""
+    agency_name: str = ""
+    investigator_name: str = ""
+    offense_type: str = ""
+    suspect_identifier: str = ""
+    victim_identifier: str = ""
+    device_identifiers: str = ""
+    notes: str = ""
+    training_mode: bool = False
+
+
+@app.get("/api/cases")
+def list_cases() -> dict:
+    store = CaseStore.from_env()
+    return {"cases": store.list_cases()}
+
+
+@app.post("/api/cases")
+def create_case(request: CaseCreateRequest) -> JSONResponse:
+    store = CaseStore.from_env()
+    created = store.create_case(request.model_dump())
+    return JSONResponse(created, status_code=201)
+
+
+@app.get("/api/cases/{case_id}")
+def get_case(case_id: str) -> dict:
+    store = CaseStore.from_env()
+    try:
+        return store.get_case(case_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Case not found.") from exc
+
+
+@app.get("/api/cases/{case_id}/audit")
+def case_audit(case_id: str) -> dict:
+    store = CaseStore.from_env()
+    try:
+        store.get_case(case_id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Case not found.") from exc
+    return {"case_id": case_id, "events": store.read_audit(case_id)}
 
 
 class AssistantRequest(BaseModel):

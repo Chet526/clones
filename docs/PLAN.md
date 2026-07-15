@@ -48,17 +48,17 @@ Additional capabilities delivered ahead of later roadmap items:
 - [x] Add and harden CI test workflow
 - [x] Update project planning status to current reality
 
-### Phase 2 — MVP completion (Next)
+### Phase 2 — MVP completion (Done)
 
-- [ ] Case workspace
-- [ ] Audit log
-- [ ] Guided wizard improvements (manual mapping + timezone confirmation)
-- [ ] Validation warnings surfaced in UI
-- [ ] KML export
-- [ ] PDF processing report
-- [ ] Training mode
+- [x] Case workspace
+- [x] Audit log
+- [x] Guided wizard improvements (manual mapping + timezone confirmation)
+- [x] Validation warnings surfaced in UI
+- [x] KML export
+- [x] PDF processing report
+- [x] Training mode
 
-### Phase 3 — Remaining roadmap completion
+### Phase 3 — Post-market expansion roadmap
 
 - [ ] Beta scope: provider parser framework/parsers, timeline animation, court exhibit builder, agency branding
 - [ ] Agency scope: accounts, RBAC, admin, MFA, encrypted vault, legal-process guide, parser update system
@@ -68,6 +68,6 @@ Additional capabilities delivered ahead of later roadmap items:
 
 ## 3. Next actions
 
-1. Begin Phase 2 implementation in small, test-backed PR slices.
-2. Keep CI green on every phase increment.
-3. Reassess plan status after each major Phase 2 deliverable.
+1. Keep CI green and stabilize the market MVP.
+2. Sequence post-market Phase 3 work by customer demand and risk.
+3. Reassess roadmap status after each major expansion release.

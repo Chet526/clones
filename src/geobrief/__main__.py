@@ -40,6 +40,8 @@ def _cmd_process(args: argparse.Namespace) -> int:
     cleaned_path = out_dir / f"{stem}_cleaned.csv"
     summary_path = out_dir / f"{stem}_summary.json"
     geojson_path = out_dir / f"{stem}_points.geojson"
+    kml_path = out_dir / f"{stem}_points.kml"
+    pdf_path = out_dir / f"{stem}_processing_report.pdf"
 
     cleaned_path.write_text(result.cleaned_csv(), encoding="utf-8")
     summary_path.write_text(result.summary_json(), encoding="utf-8")
@@ -48,12 +50,16 @@ def _cmd_process(args: argparse.Namespace) -> int:
     geojson_path.write_text(
         json.dumps(result.geojson(), indent=2), encoding="utf-8"
     )
+    kml_path.write_text(result.kml(), encoding="utf-8")
+    pdf_path.write_bytes(result.processing_report_pdf())
 
     print(result.summary()["plain_english"])
     print(f"SHA-256: {result.sha256}")
     print(f"Cleaned spreadsheet: {cleaned_path}")
     print(f"Processing summary:  {summary_path}")
     print(f"Map points (GeoJSON): {geojson_path}")
+    print(f"Google Earth (KML):  {kml_path}")
+    print(f"Processing report:   {pdf_path}")
     return 0
 
 

@@ -56,3 +56,16 @@ def test_cleaned_csv_has_all_rows():
     lines = [line for line in csv_text.splitlines() if line.strip()]
     assert len(lines) == 11
     assert "validation_status" in lines[0]
+
+
+def test_kml_export_contains_placemark():
+    result = process_file(SAMPLE_DIR / "sample_locations.csv")
+    kml = result.kml()
+    assert "<kml" in kml
+    assert "<Placemark>" in kml
+
+
+def test_processing_report_pdf_has_pdf_header():
+    result = process_file(SAMPLE_DIR / "sample_locations.csv")
+    pdf = result.processing_report_pdf()
+    assert pdf.startswith(b"%PDF-1.4")

@@ -1,6 +1,7 @@
 """Tests for the FastAPI web application."""
 
 import io
+import base64
 
 import pytest
 from fastapi.testclient import TestClient
@@ -48,6 +49,10 @@ def test_process_endpoint():
     assert body["summary"]["record_counts"]["mappable"] == 1
     assert len(body["geojson"]["features"]) == 1
     assert "validation_status" in body["cleaned_csv"]
+    assert "<kml" in body["kml"]
+    assert base64.b64decode(body["processing_report_pdf_base64"]).startswith(
+        b"%PDF-1.4"
+    )
 
 
 def test_unsupported_file_type_rejected():
@@ -192,3 +197,43 @@ def test_webhook_rejects_invalid_signature(monkeypatch):
         headers={"stripe-signature": "t=1,v1=deadbeef"},
     )
     assert response.status_code == 400
+
+
+def test_create_case_and_read_audit():
+    created = client.post(
+        "/api/cases",
+        json={
+            "case_number": "2026-001",
+            "agency_name": "Unit 7",
+            "investigator_name": "Detective M",
+        },
+    )
+    assert created.status_code == 201
+    case_id = created.json()["case_id"]
+
+    listed = client.get("/api/cases").json()["cases"]
+    assert any(case["case_id"] == case_id for case in listed)
+
+    audit = client.get(f"/api/cases/{case_id}/audit")
+    assert audit.status_code == 200
+    assert audit.json()["events"]
+
+
+def test_process_logs_event_for_case():
+    created = client.post(
+        "/api/cases",
+        json={"case_number": "2026-002", "agency_name": "Unit 8"},
+    )
+    case_id = created.json()["case_id"]
+
+    csv = "latitude,longitude,timestamp\n41.88,-87.62,2024-03-01T08:00:00Z\n"
+    files = {"file": ("records.csv", io.BytesIO(csv.encode()), "text/csv")}
+    response = client.post(
+        "/api/process",
+        files=files,
+        data={"display_timezone": "UTC", "case_id": case_id},
+    )
+    assert response.status_code == 200
+
+    audit = client.get(f"/api/cases/{case_id}/audit").json()["events"]
+    assert any(evt["event_type"] == "file_processed" for evt in audit)

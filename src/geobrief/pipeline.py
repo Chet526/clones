@@ -25,6 +25,7 @@ from .detection import DetectionResult, detect_columns
 from .hashing import sha256_bytes
 from .ingest import read_dataframe_from_bytes
 from .models import LocationRecord, ValidationStatus
+from .reporting import build_basic_pdf, build_kml
 
 __version__ = "0.1.0"
 
@@ -41,6 +42,8 @@ class ProcessingResult:
     records: list[LocationRecord]
     display_timezone: str
     warnings: list[str] = field(default_factory=list)
+    case_id: Optional[str] = None
+    training_mode: bool = False
 
     # --- Derived summary values -----------------------------------------
     @property
@@ -89,6 +92,8 @@ class ProcessingResult:
             },
             "processed_at": self.processed_at,
             "display_timezone": self.display_timezone,
+            "case_id": self.case_id,
+            "training_mode": self.training_mode,
             "detected_columns": self.detection.mapping.to_dict(),
             "detection_confidence": {
                 k: v.value for k, v in self.detection.confidence.items()
@@ -122,6 +127,11 @@ class ProcessingResult:
             parts.append(
                 f"Timestamps range from {first} to {last} (UTC), shown in "
                 f"{self.display_timezone}."
+            )
+        if self.training_mode:
+            parts.append(
+                "Training mode is on. Outputs are for practice and must not "
+                "be used as real evidence."
             )
         return " ".join(parts)
 
@@ -164,6 +174,43 @@ class ProcessingResult:
             )
         return {"type": "FeatureCollection", "features": features}
 
+    def kml(self) -> str:
+        """Google Earth export for mappable points."""
+        return build_kml(
+            self.geojson()["features"],
+            name=f"{self.filename} points",
+            training_mode=self.training_mode,
+        )
+
+    def processing_report_pdf(self) -> bytes:
+        """Basic PDF processing report for investigator review."""
+        summary = self.summary()
+        counts = summary["record_counts"]
+        lines = [
+            f"Source file: {self.filename}",
+            f"SHA-256: {self.sha256}",
+            f"Processed at (UTC): {self.processed_at}",
+            f"Case ID: {self.case_id or 'not set'}",
+            f"Display time zone: {self.display_timezone}",
+            f"Total records: {counts['total']}",
+            f"Valid points: {counts['valid']}",
+            f"Mappable points: {counts['mappable']}",
+            f"Skipped or flagged: {counts['skipped_or_flagged']}",
+            "",
+            "Warnings:",
+        ]
+        warnings = summary["warnings"] or ["None"]
+        lines.extend(f"- {warning}" for warning in warnings)
+        if self.training_mode:
+            lines.extend(
+                [
+                    "",
+                    "TRAINING MODE",
+                    "This report is generated from sample/practice data only.",
+                ]
+            )
+        return build_basic_pdf(lines, title="GeoBrief LE Processing Report")
+
 
 def process_dataframe(
     df: pd.DataFrame,
@@ -173,6 +220,8 @@ def process_dataframe(
     display_timezone: str = "UTC",
     assume_source_timezone: Optional[str] = None,
     mapping_override=None,
+    case_id: Optional[str] = None,
+    training_mode: bool = False,
 ) -> ProcessingResult:
     """Run detection + cleaning on an already-loaded DataFrame."""
     detection = detect_columns(df)
@@ -200,6 +249,8 @@ def process_dataframe(
         records=records,
         display_timezone=display_timezone,
         warnings=warnings,
+        case_id=case_id,
+        training_mode=training_mode,
     )
 
 
@@ -209,6 +260,9 @@ def process_bytes(
     *,
     display_timezone: str = "UTC",
     assume_source_timezone: Optional[str] = None,
+    mapping_override=None,
+    case_id: Optional[str] = None,
+    training_mode: bool = False,
 ) -> ProcessingResult:
     """Process raw uploaded bytes end to end."""
     df = read_dataframe_from_bytes(data, filename)
@@ -218,6 +272,9 @@ def process_bytes(
         raw_bytes=data,
         display_timezone=display_timezone,
         assume_source_timezone=assume_source_timezone,
+        mapping_override=mapping_override,
+        case_id=case_id,
+        training_mode=training_mode,
     )
 
 
@@ -226,6 +283,9 @@ def process_file(
     *,
     display_timezone: str = "UTC",
     assume_source_timezone: Optional[str] = None,
+    mapping_override=None,
+    case_id: Optional[str] = None,
+    training_mode: bool = False,
 ) -> ProcessingResult:
     """Process a file from disk end to end (original file is only read)."""
     path = Path(path)
@@ -235,4 +295,7 @@ def process_file(
         path.name,
         display_timezone=display_timezone,
         assume_source_timezone=assume_source_timezone,
+        mapping_override=mapping_override,
+        case_id=case_id,
+        training_mode=training_mode,
     )

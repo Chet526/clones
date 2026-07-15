@@ -19,6 +19,40 @@
   </header>
 
   <main>
+    <section class="card" id="case-card">
+      <h2>Case workspace</h2>
+      <p class="hint">Create a case to save metadata and an immutable audit trail.</p>
+      <form id="case-form" class="grid-form">
+        <label class="field">
+          <span>Case number</span>
+          <input type="text" id="case-number" />
+        </label>
+        <label class="field">
+          <span>Agency name</span>
+          <input type="text" id="agency-name" />
+        </label>
+        <label class="field">
+          <span>Investigator</span>
+          <input type="text" id="investigator-name" />
+        </label>
+        <label class="field">
+          <span>Offense type</span>
+          <input type="text" id="offense-type" />
+        </label>
+        <label class="field field-wide">
+          <span>Case notes</span>
+          <textarea id="case-notes" rows="2"></textarea>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="training-mode" />
+          <span>Training mode (sample/practice outputs only)</span>
+        </label>
+        <button type="submit" class="secondary">Create case workspace</button>
+      </form>
+      <p id="case-status" class="status" role="status" aria-live="polite"></p>
+      <div id="case-summary" class="hidden"></div>
+    </section>
+
     <section class="card" id="upload-card">
       <h2>Step 1 &mdash; Upload your file</h2>
       <p class="hint">
@@ -45,6 +79,19 @@
             <option value="Pacific/Honolulu">Hawaii Time</option>
           </select>
         </label>
+
+        <label class="checkbox">
+          <input type="checkbox" id="timezone-confirm" required />
+          <span>I confirm this display time zone is correct for this case.</span>
+        </label>
+
+        <details class="manual-mapping">
+          <summary>Step 2 — Manual mapping (if auto-detection is wrong)</summary>
+          <label class="field"><span>Latitude column</span><input type="text" id="map-lat" placeholder="e.g. latitude" /></label>
+          <label class="field"><span>Longitude column</span><input type="text" id="map-lon" placeholder="e.g. longitude" /></label>
+          <label class="field"><span>Timestamp column</span><input type="text" id="map-time" placeholder="e.g. timestamp" /></label>
+          <label class="field"><span>Accuracy column</span><input type="text" id="map-acc" placeholder="e.g. accuracy_m" /></label>
+        </details>
 
         <button type="submit" id="process-btn" class="primary">
           Process file
@@ -81,9 +128,15 @@
         <button id="dl-csv" class="secondary">Cleaned spreadsheet (CSV)</button>
         <button id="dl-json" class="secondary">Processing report (JSON)</button>
         <button id="dl-geojson" class="secondary">Map points (GeoJSON)</button>
+        <button id="dl-kml" class="secondary">Google Earth file (KML)</button>
+        <button id="dl-pdf" class="secondary">Processing report (PDF)</button>
       </div>
 
-      <h2>Step 5 &mdash; Ask the assistant</h2>
+      <h2>Step 5 &mdash; Audit log</h2>
+      <p class="hint">Every case action is timestamped and traceable.</p>
+      <ul id="audit-list" class="audit-list"></ul>
+
+      <h2>Step 6 &mdash; Ask the assistant</h2>
       <div class="upsell hidden" id="assistant-upsell">
         <p id="assistant-upsell-text"></p>
         <a href="#pricing-card" class="upsell-cta" id="assistant-upsell-cta">
