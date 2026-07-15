@@ -2,7 +2,7 @@
 
 import json
 
-from conftest import SAMPLE_DIR
+from tests.conftest import SAMPLE_DIR
 
 from geobrief.pipeline import process_file
 

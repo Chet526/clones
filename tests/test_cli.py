@@ -1,7 +1,7 @@
 """Tests for the ``python -m geobrief ask`` CLI command."""
 
 from geobrief.__main__ import main
-from conftest import SAMPLE_DIR
+from tests.conftest import SAMPLE_DIR
 
 SAMPLE = SAMPLE_DIR / "sample_locations.csv"
 
